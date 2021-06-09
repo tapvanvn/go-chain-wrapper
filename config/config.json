@@ -1,0 +1,11 @@
+{
+    "chains": [
+        {
+            "name":"bsc",
+            "num_worker":1,
+            "endpoints":[
+                "https://bsc-dataseed1.binance.org"
+            ]
+        }
+    ]
+}
