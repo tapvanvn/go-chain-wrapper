@@ -27,6 +27,7 @@ type Transaction struct {
 	Nonce            string `json:"nonce"`
 	R                string `json:"r"`
 	S                string `json:"s"`
+	From             string `json:"from"`
 	To               string `json:"to"`
 	TransactionIndex string `json:"transactionIndex"`
 	Type             string `json:"type"`

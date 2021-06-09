@@ -68,7 +68,8 @@ func (campain *Campain) processTransaction() {
 			}
 		}
 		if !isFilted {
-			fmt.Println("found transaction:", trans.BlockHash)
+			fmt.Println("found transaction:", trans.Hash)
+			fmt.Println("\tfrom:", trans.From)
 		}
 		campain.mux.Unlock()
 	}
