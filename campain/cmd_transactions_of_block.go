@@ -1,18 +1,19 @@
-package command
+package campain
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 )
 
 type CmdTransactionsOfBlock struct {
 	id           int
-	BlockNumber  int
+	BlockNumber  int64
 	Transactions []*entity.Transaction
 }
 
-func CreateCmdTransactionsOfBlock(blockNumber int) *CmdTransactionsOfBlock {
+func CreateCmdTransactionsOfBlock(blockNumber int64) *CmdTransactionsOfBlock {
 	return &CmdTransactionsOfBlock{
 		BlockNumber: blockNumber,
 	}
@@ -32,10 +33,20 @@ func (cmd *CmdTransactionsOfBlock) GetID() int {
 }
 
 func (cmd *CmdTransactionsOfBlock) GetCommand() string {
-	str := "eth.getTransactionsByBlockNumber(\"latest\")"
-	return str
+	if cmd.BlockNumber == -1 {
+		return "eth.getTransactionsByBlockNumber(\"latest\")"
+	}
+	//num, err := strconv.ParseInt(hex_num, 16, 64)
+	hexNum := strconv.FormatInt(cmd.BlockNumber, 16)
+	return "eth.getTransactionsByBlockNumber(\"0x" + hexNum + "\")"
 }
 
 func (cmd *CmdTransactionsOfBlock) GetResponseInterface() interface{} {
 	return &cmd.Transactions
+}
+
+func (cmd *CmdTransactionsOfBlock) Done(campain *Campain) {
+	for _, trans := range cmd.Transactions {
+		campain.ChnTransactions <- *trans
+	}
 }

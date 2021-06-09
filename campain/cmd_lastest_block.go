@@ -1,10 +1,14 @@
-package command
+package campain
 
 import "fmt"
 
 type CmdGetLatestBlockNumber struct {
 	id          int
-	BlockNumber int
+	BlockNumber int64
+}
+
+func CreateCmdLatestBlockNumber() *CmdGetLatestBlockNumber {
+	return &CmdGetLatestBlockNumber{}
 }
 
 func (cmd *CmdGetLatestBlockNumber) Init() {
@@ -25,4 +29,8 @@ func (cmd *CmdGetLatestBlockNumber) GetResponseInterface() interface{} {
 
 func (cmd *CmdGetLatestBlockNumber) Debug() {
 	fmt.Println(cmd.BlockNumber)
+}
+
+func (cmd *CmdGetLatestBlockNumber) Done(campain *Campain) {
+	campain.ChnBlockNumber <- cmd.BlockNumber
 }

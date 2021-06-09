@@ -1,4 +1,4 @@
-package worker
+package campain
 
 import (
 	"bufio"
@@ -10,8 +10,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/tapvanvn/go-jsonrpc-wrapper/command"
 )
 
 var __id int = 0
@@ -24,13 +22,15 @@ type Tool struct {
 	ready          bool
 	openIn         bool
 	openOut        bool
-	commands       chan command.Command
-	waitingCommand command.Command
+	commands       chan Command
+	waitingCommand Command
 	response       chan string
 	firstCaret     bool
+	campain        *Campain
 }
 
 func (tool *Tool) scan() {
+	defer tool.stdout.Close()
 	s := bufio.NewScanner(tool.stdout)
 	for s.Scan() {
 		text := s.Text()
@@ -65,7 +65,7 @@ func (tool *Tool) processResponse() {
 							if err != nil {
 								fmt.Println(err)
 							}
-							tool.waitingCommand.Debug()
+							tool.waitingCommand.Done(tool.campain)
 							tool.waitingCommand = nil
 							cache = ""
 						}
@@ -94,7 +94,7 @@ func (tool *Tool) processResponse() {
 					if err != nil {
 						fmt.Println(err)
 					}
-					tool.waitingCommand.Debug()
+					tool.waitingCommand.Done(tool.campain)
 					tool.waitingCommand = nil
 				}
 			}
@@ -103,17 +103,17 @@ func (tool *Tool) processResponse() {
 	}
 }
 
-func (tool *Tool) addCommand(cmd command.Command) {
+func (tool *Tool) addCommand(cmd Command) {
 
 	tool.commands <- cmd
 }
 
-func (tool *Tool) AddCommand(cmd command.Command) {
+func (tool *Tool) AddCommand(cmd Command) {
 	tool.commands <- cmd
 }
 
 func (tool *Tool) processCommand() {
-
+	defer tool.stdin.Close()
 	for {
 
 		if tool.waitingCommand != nil {
@@ -132,30 +132,26 @@ func (tool *Tool) processCommand() {
 }
 
 func (tool *Tool) Close() {
-	if tool.openIn {
-		tool.stdin.Close()
-	}
-	if tool.openOut {
-		tool.stdout.Close()
-	}
+
 }
 
-func NewTool(chain string) (*Tool, error) {
+func NewTool(campain *Campain) (*Tool, error) {
 
 	__id += 1
 	tool := &Tool{id: __id,
 		ready:          false,
 		openIn:         false,
 		openOut:        false,
-		commands:       make(chan command.Command),
+		commands:       make(chan Command),
 		waitingCommand: nil,
 		response:       make(chan string),
 		firstCaret:     false,
+		campain:        campain,
 	}
 
 	var command string = ""
 
-	if chain == "bsc" {
+	if campain.chainName == "bsc" {
 		command = "./bsc/geth"
 	}
 

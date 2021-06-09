@@ -4,6 +4,7 @@ type Chain struct {
 	Name      string   `json:"name"`
 	NumWorker int      `json:"num_worker"`
 	Endpoints []string `json:"endpoints"`
+	Tracking  []Track  `json:"tracking"`
 }
 type Config struct {
 	Chains []Chain `json:"chains"`

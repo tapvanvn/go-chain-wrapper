@@ -5,7 +5,11 @@
             "num_worker":1,
             "endpoints":[
                 "https://bsc-dataseed1.binance.org"
-            ]
+            ],
+            "tracking":[{
+                "address":"0xfb62ae373aca027177d1c18ee0862817f9080d08",
+                "subjects":["transaction.to"]
+            }]
         }
     ]
 }

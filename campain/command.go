@@ -1,4 +1,4 @@
-package command
+package campain
 
 var __cmd_id int = 0
 
@@ -13,4 +13,5 @@ type Command interface {
 	GetCommand() string
 	GetResponseInterface() interface{}
 	Debug()
+	Done(campain *Campain)
 }

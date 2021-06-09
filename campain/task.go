@@ -1,17 +1,15 @@
-package worker
+package campain
 
 import (
 	"fmt"
-
-	"github.com/tapvanvn/go-jsonrpc-wrapper/command"
 )
 
 type Task struct {
 	tool    string
-	command command.Command
+	command Command
 }
 
-func NewTask(chain string, command command.Command) *Task {
+func NewTask(chain string, command Command) *Task {
 	return &Task{
 		tool:    chain,
 		command: command,

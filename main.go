@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/command"
+	"github.com/tapvanvn/go-jsonrpc-wrapper/campain"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+	"github.com/tapvanvn/go-jsonrpc-wrapper/filter"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/route"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/system"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/utility"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/worker"
 	"github.com/tapvanvn/gorouter/v2"
 	"github.com/tapvanvn/goworker"
 )
@@ -59,10 +60,28 @@ func main() {
 
 	for _, chain := range system.Config.Chains {
 		fmt.Println("add tool for chain ", chain.Name)
-		if chain.Name == "bsc" {
 
-			goworker.AddToolWithControl("bsc", &worker.BSCBlacksmith{}, chain.NumWorker)
+		camp := campain.NewCampain(chain.Name, time.Second*5)
+
+		for _, track := range chain.Tracking {
+
+			for _, subject := range track.Subjects {
+
+				if subject == "transaction.to" {
+
+					filter := &filter.FilMatchTo{
+
+						Address: track.Address,
+					}
+					camp.AddFilter(filter)
+				}
+			}
 		}
+		goworker.AddToolWithControl(chain.Name, &campain.BlackSmith{
+			Campain: camp,
+		}, chain.NumWorker)
+
+		camp.Run()
 	}
 
 	//MARK: init router
@@ -93,7 +112,7 @@ func main() {
 
 	fmt.Println("listen on port", port)
 
-	for i := 0; i < 2; i++ {
+	/*for i := 0; i < 2; i++ {
 		cmd := &command.CmdGetLatestBlockNumber{}
 		cmd.Init()
 		task := worker.NewTask("bsc", cmd)
@@ -105,6 +124,7 @@ func main() {
 	cmd.Init()
 	task := worker.NewTask("bsc", cmd)
 	goworker.AddTask(task)
+	*/
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
