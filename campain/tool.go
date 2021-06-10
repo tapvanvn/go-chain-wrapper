@@ -43,6 +43,7 @@ func (tool *Tool) processResponse() {
 	go tool.scan()
 
 	ticker := time.NewTicker(time.Microsecond * 100)
+	textTime := time.Now().Unix()
 	defer func() {
 		ticker.Stop()
 	}()
@@ -50,6 +51,7 @@ func (tool *Tool) processResponse() {
 	for {
 		select {
 		case text := <-tool.response:
+			textTime = time.Now().Unix()
 			pos := strings.Index(text, ">")
 			if pos > -1 {
 				if tool.firstCaret {
@@ -63,9 +65,12 @@ func (tool *Tool) processResponse() {
 							inter := tool.waitingCommand.GetResponseInterface()
 							err := json.Unmarshal([]byte(cache), inter)
 							if err != nil {
+								tool.firstCaret = false
 								fmt.Println(err, cache)
+								tool.commands <- tool.waitingCommand
+							} else {
+								tool.waitingCommand.Done(tool.campain)
 							}
-							tool.waitingCommand.Done(tool.campain)
 							tool.waitingCommand = nil
 							cache = ""
 						}
@@ -79,26 +84,35 @@ func (tool *Tool) processResponse() {
 				cache += text
 
 			}
-			ticker.Reset(time.Second * 1)
 		case <-ticker.C:
 			if tool.waitingCommand != nil {
 
 				if tool.firstCaret {
-					//fmt.Println("end by timeout:", time.Now().Nanosecond(), tool.waitingCommand.GetID(), cache)
-					inter := tool.waitingCommand.GetResponseInterface()
-					re := regexp.MustCompile(`(\w*):`)
-					cache = re.ReplaceAllString(cache, "\"$1\":")
-					//fmt.Println("end by timeout:", time.Now().Nanosecond(), tool.waitingCommand.GetID(), cache)
-					err := json.Unmarshal([]byte(cache), inter)
+					if time.Now().Unix()-textTime > 1 {
+						//fmt.Println("end by timeout:", time.Now().Nanosecond(), tool.waitingCommand.GetID(), cache)
+						inter := tool.waitingCommand.GetResponseInterface()
+						re := regexp.MustCompile(`(\w*):`)
+						cache = re.ReplaceAllString(cache, "\"$1\":")
+						//fmt.Println("end by timeout:", time.Now().Nanosecond(), tool.waitingCommand.GetID(), cache)
+						err := json.Unmarshal([]byte(cache), inter)
 
-					if err != nil {
-						fmt.Println(err, cache)
+						if err != nil {
+							fmt.Println(err, cache)
+							tool.firstCaret = false
+							tool.commands <- tool.waitingCommand
+						} else {
+							tool.waitingCommand.Done(tool.campain)
+						}
+
+						tool.waitingCommand = nil
+						cache = ""
+
+						textTime = time.Now().Unix()
+
 					}
-					tool.waitingCommand.Done(tool.campain)
-					tool.waitingCommand = nil
 				}
 			}
-			cache = ""
+
 		}
 	}
 }

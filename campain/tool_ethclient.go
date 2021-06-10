@@ -1,6 +1,10 @@
 package campain
 
-import "time"
+import (
+	"time"
+
+	"github.com/ethereum/go-ethereum/ethclient"
+)
 
 type EthClientTool struct {
 	id             int
@@ -8,6 +12,7 @@ type EthClientTool struct {
 	commands       chan Command
 	waitingCommand Command
 	campain        *Campain
+	backend        *ethclient.Client
 }
 
 func NewEthClientTool(campain *Campain) (*EthClientTool, error) {
@@ -19,10 +24,17 @@ func NewEthClientTool(campain *Campain) (*EthClientTool, error) {
 		waitingCommand: nil,
 		campain:        campain,
 	}
-
+	backend, err := ethclient.Dial("https://bsc-dataseed1.binance.org")
+	if err != nil {
+		return nil, err
+	}
+	tool.backend = backend
 	go tool.process()
 
 	return tool, nil
+}
+func (tool *EthClientTool) AddCommand(cmd Command) {
+	tool.commands <- cmd
 }
 
 func (tool *EthClientTool) process() {

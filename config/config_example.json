@@ -13,7 +13,7 @@
                     "contract":"dpet"
                 }, 
                 {
-                    "address":"0xea2e87ff1bc1E52b640452694E2F143F7f8D64bE",
+                    "address":"0xea2e87ff1bc1e52b640452694e2f143f7f8d64be",
                     "subjects":["transaction.to"],
                     "contract":"dpet"
                 }
