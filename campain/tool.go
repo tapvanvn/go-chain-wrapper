@@ -42,7 +42,7 @@ func (tool *Tool) processResponse() {
 
 	go tool.scan()
 
-	ticker := time.NewTicker(time.Microsecond * 10)
+	ticker := time.NewTicker(time.Microsecond * 100)
 	defer func() {
 		ticker.Stop()
 	}()
@@ -63,7 +63,7 @@ func (tool *Tool) processResponse() {
 							inter := tool.waitingCommand.GetResponseInterface()
 							err := json.Unmarshal([]byte(cache), inter)
 							if err != nil {
-								fmt.Println(err)
+								fmt.Println(err, cache)
 							}
 							tool.waitingCommand.Done(tool.campain)
 							tool.waitingCommand = nil
@@ -92,7 +92,7 @@ func (tool *Tool) processResponse() {
 					err := json.Unmarshal([]byte(cache), inter)
 
 					if err != nil {
-						fmt.Println(err)
+						fmt.Println(err, cache)
 					}
 					tool.waitingCommand.Done(tool.campain)
 					tool.waitingCommand = nil

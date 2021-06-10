@@ -19,21 +19,65 @@ type Campain struct {
 	chainName       string
 	ChnTransactions chan entity.Transaction
 	ChnBlockNumber  chan int64
-	filters         []filter.IFilter
+	filters         map[filter.IFilter]*entity.Track
 	lastBlockNumber int64
+	abis            map[string]IABI
 }
 
 func NewCampain(chain string, timeRange time.Duration) *Campain {
 
-	return &Campain{
+	camp := &Campain{
 		timeRange:       timeRange,
 		isRun:           false,
 		chainName:       chain,
 		ChnTransactions: make(chan entity.Transaction),
 		ChnBlockNumber:  make(chan int64),
-		filters:         make([]filter.IFilter, 0),
+		filters:         make(map[filter.IFilter]*entity.Track),
 		lastBlockNumber: 0,
+		abis:            map[string]IABI{},
 	}
+
+	return camp
+}
+func (campain *Campain) LoadAbi(abiName string) error {
+	if abiName != "" {
+		if campain.chainName == "bsc" {
+			abiObj, err := NewEthereumABI(abiName)
+			if err != nil {
+				return err
+			} else {
+				campain.abis[abiName] = abiObj
+			}
+		}
+	}
+	return nil
+}
+func (campain *Campain) Tracking(track entity.Track) error {
+
+	campain.mux.Lock()
+	for _, subject := range track.Subjects {
+
+		if subject == "transaction.to" {
+
+			filter := &filter.FilMatchTo{
+
+				Address: track.Address,
+			}
+			campain.filters[filter] = &track
+		}
+	}
+	if track.AbiName != "" {
+		if campain.chainName == "bsc" {
+			abiObj, err := NewEthereumABI(track.AbiName)
+			if err != nil {
+				fmt.Println("load abi fail:", track.AbiName, err)
+			} else {
+				campain.abis[track.AbiName] = abiObj
+			}
+		}
+	}
+	campain.mux.Unlock()
+	return nil
 }
 
 func (campain *Campain) processBlockNumber() {
@@ -61,24 +105,27 @@ func (campain *Campain) processTransaction() {
 	for {
 		trans := <-campain.ChnTransactions
 		campain.mux.Lock()
-		isFilted := true
-		for _, filter := range campain.filters {
+		//isFilted := true
+		for filter, track := range campain.filters {
 			if filter.Match(&trans) {
-				isFilted = false
+				//isFilted = false
+				fmt.Println("found transaction:", trans.Hash)
+				fmt.Println("\tfrom:", trans.From)
+				fmt.Println("\tto:", trans.To)
+				if track.AbiName != "" {
+					if abiObj, ok := campain.abis[track.AbiName]; ok {
+						method, args, err := abiObj.GetMethod(trans.Input)
+						if err == nil {
+							fmt.Println("\tmethod:", method, args)
+						}
+					}
+				}
+
 			}
 		}
-		if !isFilted {
-			fmt.Println("found transaction:", trans.Hash)
-			fmt.Println("\tfrom:", trans.From)
-		}
+
 		campain.mux.Unlock()
 	}
-}
-
-func (campain *Campain) AddFilter(filter filter.IFilter) {
-	campain.mux.Lock()
-	campain.filters = append(campain.filters, filter)
-	campain.mux.Unlock()
 }
 
 func (campain *Campain) run() {

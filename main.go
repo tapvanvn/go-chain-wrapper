@@ -12,7 +12,6 @@ import (
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/campain"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/filter"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/route"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/system"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/utility"
@@ -27,7 +26,7 @@ func main() {
 
 	var port = utility.MustGetEnv("PORT")
 	rootPath, err := filepath.Abs(filepath.Dir(os.Args[0]))
-
+	system.RootPath = rootPath
 	//MARK: init system config
 	jsonFile2, err := os.Open(rootPath + "/config/config.json")
 
@@ -65,17 +64,7 @@ func main() {
 
 		for _, track := range chain.Tracking {
 
-			for _, subject := range track.Subjects {
-
-				if subject == "transaction.to" {
-
-					filter := &filter.FilMatchTo{
-
-						Address: track.Address,
-					}
-					camp.AddFilter(filter)
-				}
-			}
+			camp.Tracking(track)
 		}
 		goworker.AddToolWithControl(chain.Name, &campain.BlackSmith{
 			Campain: camp,
