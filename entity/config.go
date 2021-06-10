@@ -1,10 +1,11 @@
 package entity
 
 type Chain struct {
-	Name      string   `json:"name"`
-	NumWorker int      `json:"num_worker"`
-	Endpoints []string `json:"endpoints"`
-	Tracking  []Track  `json:"tracking"`
+	Name      string     `json:"name"`
+	NumWorker int        `json:"num_worker"`
+	Endpoints []string   `json:"endpoints"`
+	Tracking  []Track    `json:"tracking"`
+	Contracts []Contract `json:"contracts"`
 }
 type Config struct {
 	Chains []Chain `json:"chains"`

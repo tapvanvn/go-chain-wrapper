@@ -1,0 +1,35 @@
+{
+    "chains": [
+        {
+            "name":"bsc",
+            "num_worker":1,
+            "endpoints":[
+                "https://bsc-dataseed.binance.org"
+            ],
+            "tracking":[
+                {
+                    "address":"0xfb62ae373aca027177d1c18ee0862817f9080d08",
+                    "subjects":["transaction.to"],
+                    "contract":"dpet"
+                }, 
+                {
+                    "address":"0xea2e87ff1bc1E52b640452694E2F143F7f8D64bE",
+                    "subjects":["transaction.to"],
+                    "contract":"dpet"
+                }
+            ],
+            "contracts":[
+                {
+                    "name":"dpet",
+                    "address":"0xfb62ae373aca027177d1c18ee0862817f9080d08",
+                    "abi":"pet_sol_PetCore.abi"
+                },
+                {
+                    "name":"pet",
+                    "address":"0xea2e87ff1bc1E52b640452694E2F143F7f8D64bE",
+                    "abi":"pet_sol_PetCore.abi"
+                }
+            ]
+        }
+    ]
+}

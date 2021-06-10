@@ -21,3 +21,4 @@ namespace.txt
 **/token.txt
 bsc
 abi_file/*.abi
+config/config.json

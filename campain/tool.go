@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var __id int = 0
+var __tool_id int = 0
 
 type Tool struct {
 	id             int
@@ -137,8 +137,8 @@ func (tool *Tool) Close() {
 
 func NewTool(campain *Campain) (*Tool, error) {
 
-	__id += 1
-	tool := &Tool{id: __id,
+	__tool_id += 1
+	tool := &Tool{id: __tool_id,
 		ready:          false,
 		openIn:         false,
 		openOut:        false,

@@ -62,14 +62,26 @@ func main() {
 
 		camp := campain.NewCampain(chain.Name, time.Second*5)
 
+		for _, contract := range chain.Contracts {
+			camp.LoadContract(&contract)
+			if chain.Name == "bsc" {
+				goworker.AddToolWithControl(chain.Name+"."+contract.Name, &campain.EthContractBlackSmith{
+					Campain:      camp,
+					ContractName: contract.Name,
+				}, chain.NumWorker)
+			}
+		}
+
 		for _, track := range chain.Tracking {
 
 			camp.Tracking(track)
 		}
-		goworker.AddToolWithControl(chain.Name, &campain.BlackSmith{
-			Campain: camp,
-		}, chain.NumWorker)
+		if chain.Name == "bsc" {
+			goworker.AddToolWithControl(chain.Name, &campain.JsonRpcBlackSmith{
+				Campain: camp,
+			}, chain.NumWorker)
 
+		}
 		camp.Run()
 	}
 
@@ -113,6 +125,14 @@ func main() {
 	cmd.Init()
 	task := worker.NewTask("bsc", cmd)
 	goworker.AddTask(task)
+	*/
+	/*
+		call := campain.ContractCall{
+			FuncName: "totalSupply",
+			Params:   nil,
+		}
+		task := campain.NewContractTask("bsc.pet", &call)
+		goworker.AddTask(task)
 	*/
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))

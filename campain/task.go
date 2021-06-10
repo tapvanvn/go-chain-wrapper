@@ -30,3 +30,30 @@ func (task *Task) Process(tool interface{}) {
 func (task *Task) ToolLabel() string {
 	return task.tool
 }
+
+type ContractTask struct {
+	tool string
+	call *ContractCall
+}
+
+func NewContractTask(chain string, call *ContractCall) *ContractTask {
+	return &ContractTask{
+		tool: chain,
+		call: call,
+	}
+}
+
+func (task *ContractTask) Process(tool interface{}) {
+
+	if tool1, ok := tool.(*ContractTool); ok {
+
+		tool1.AddCall(task.call)
+
+	} else {
+		fmt.Println("not tool")
+	}
+}
+
+func (task *ContractTask) ToolLabel() string {
+	return task.tool
+}

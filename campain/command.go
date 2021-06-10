@@ -15,3 +15,17 @@ type Command interface {
 	Debug()
 	Done(campain *Campain)
 }
+
+type ContractCall struct {
+	FuncName string
+	Params   []interface{}
+	Out      *[]interface{}
+}
+
+func CreateContractCall(funcName string, params []interface{}) *ContractCall {
+	return &ContractCall{
+		FuncName: funcName,
+		Params:   params,
+		Out:      nil,
+	}
+}

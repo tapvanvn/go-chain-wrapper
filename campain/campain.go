@@ -39,19 +39,21 @@ func NewCampain(chain string, timeRange time.Duration) *Campain {
 
 	return camp
 }
-func (campain *Campain) LoadAbi(abiName string) error {
-	if abiName != "" {
+func (campain *Campain) LoadContract(contract *entity.Contract) error {
+	if contract.AbiName != "" {
 		if campain.chainName == "bsc" {
-			abiObj, err := NewEthereumABI(abiName)
+			abiObj, err := NewEthereumABI(contract.AbiName, contract.Address)
 			if err != nil {
 				return err
 			} else {
-				campain.abis[abiName] = abiObj
+				abiObj.Info()
+				campain.abis[contract.Name] = abiObj
 			}
 		}
 	}
 	return nil
 }
+
 func (campain *Campain) Tracking(track entity.Track) error {
 
 	campain.mux.Lock()
@@ -66,16 +68,7 @@ func (campain *Campain) Tracking(track entity.Track) error {
 			campain.filters[filter] = &track
 		}
 	}
-	if track.AbiName != "" {
-		if campain.chainName == "bsc" {
-			abiObj, err := NewEthereumABI(track.AbiName)
-			if err != nil {
-				fmt.Println("load abi fail:", track.AbiName, err)
-			} else {
-				campain.abis[track.AbiName] = abiObj
-			}
-		}
-	}
+
 	campain.mux.Unlock()
 	return nil
 }
@@ -112,15 +105,14 @@ func (campain *Campain) processTransaction() {
 				fmt.Println("found transaction:", trans.Hash)
 				fmt.Println("\tfrom:", trans.From)
 				fmt.Println("\tto:", trans.To)
-				if track.AbiName != "" {
-					if abiObj, ok := campain.abis[track.AbiName]; ok {
+				if track.ContractName != "" {
+					if abiObj, ok := campain.abis[track.ContractName]; ok {
 						method, args, err := abiObj.GetMethod(trans.Input)
 						if err == nil {
 							fmt.Println("\tmethod:", method, args)
 						}
 					}
 				}
-
 			}
 		}
 
