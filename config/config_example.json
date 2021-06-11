@@ -6,16 +6,31 @@
             "endpoints":[
                 "https://bsc-dataseed.binance.org"
             ],
+            "exports":[
+                {
+                    "name":"rpi-cluster",
+                    "type":"wspubsub",
+                    "connection_string":"ws://192.168.1.8:80/ws"
+                }
+            ],
             "tracking":[
                 {
                     "address":"0xfb62ae373aca027177d1c18ee0862817f9080d08",
                     "subjects":["transaction.to"],
-                    "contract":"dpet"
+                    "contract":"dpet",
+                    "reports":[ {
+                        "name":"rpi-cluster",
+                        "topic":"dpet_event"
+                    }]
                 }, 
                 {
                     "address":"0xea2e87ff1bc1e52b640452694e2f143f7f8d64be",
                     "subjects":["transaction.to"],
-                    "contract":"dpet"
+                    "contract":"dpet",
+                    "reports":[ {
+                        "name":"rpi-cluster",
+                        "topic":"pet_event"
+                    }]
                 }
             ],
             "contracts":[

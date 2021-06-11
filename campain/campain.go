@@ -1,6 +1,7 @@
 package campain
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -8,7 +9,8 @@ import (
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/filter"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/utility"
-
+	"github.com/tapvanvn/gopubsubengine"
+	"github.com/tapvanvn/gopubsubengine/wspubsub"
 	"github.com/tapvanvn/goworker"
 )
 
@@ -22,6 +24,9 @@ type Campain struct {
 	filters         map[filter.IFilter]*entity.Track
 	lastBlockNumber int64
 	abis            map[string]IABI
+	exportType      map[string]string
+	pubsubHub       map[string]gopubsubengine.Hub
+	pubsubTopidLoad map[string]bool
 }
 
 func NewCampain(chain string, timeRange time.Duration) *Campain {
@@ -35,9 +40,27 @@ func NewCampain(chain string, timeRange time.Duration) *Campain {
 		filters:         make(map[filter.IFilter]*entity.Track),
 		lastBlockNumber: 0,
 		abis:            map[string]IABI{},
+		exportType:      map[string]string{},
+		pubsubHub:       make(map[string]gopubsubengine.Hub),
+		pubsubTopidLoad: make(map[string]bool),
 	}
 
 	return camp
+}
+
+func (campain *Campain) AddExport(export *entity.Export) error {
+	if export.Type == "wspubsub" {
+		if _, ok := campain.pubsubHub[export.Name]; !ok {
+			hub, err := wspubsub.NewWSPubSubHub(export.ConnectionString)
+			if err != nil {
+				return err
+			}
+			campain.pubsubHub[export.Name] = hub
+			campain.exportType[export.Name] = export.Type
+		}
+		return nil
+	}
+	return errors.New("export not supported")
 }
 func (campain *Campain) LoadContract(contract *entity.Contract) error {
 	if contract.AbiName != "" {
@@ -68,9 +91,42 @@ func (campain *Campain) Tracking(track entity.Track) error {
 			campain.filters[filter] = &track
 		}
 	}
+	for _, report := range track.Reports {
+		exportType, ok := campain.exportType[report.Name]
+		if !ok {
+			return errors.New("export not loaded")
+		}
+		if exportType != "wspubsub" {
+			return errors.New("export is not supported")
+		}
+		_, ok = campain.pubsubTopidLoad[report.Topic]
+		if ok {
+			continue
+		}
+		goworker.AddToolWithControl(campain.chainName+"."+report.Name+"."+report.Topic,
+			&ExportPubsubBlackSmith{
+				Campain:    campain,
+				Topic:      report.Topic,
+				ExportName: report.Name,
+			},
+			1)
+		campain.pubsubTopidLoad[report.Topic] = true
+	}
 
 	campain.mux.Unlock()
 	return nil
+}
+
+func (campain *Campain) report(report *entity.Report, message interface{}) {
+	exportType, ok := campain.exportType[report.Name]
+	if !ok || exportType != "wspubsub" {
+		return
+	}
+	toolName := campain.chainName + "." + report.Name + "." + report.Topic
+	go goworker.AddTask(&PubsubTask{
+		tool:    toolName,
+		message: message,
+	})
 }
 
 func (campain *Campain) processBlockNumber() {
@@ -89,7 +145,7 @@ func (campain *Campain) processBlockNumber() {
 			cmd := CreateCmdTransactionsOfBlock(i)
 			cmd.Init()
 			task := NewTask(campain.chainName, cmd)
-			goworker.AddTask(task)
+			go goworker.AddTask(task)
 		}
 		campain.lastBlockNumber = blockNumber
 	}
@@ -101,17 +157,27 @@ func (campain *Campain) processTransaction() {
 		//isFilted := true
 		for filter, track := range campain.filters {
 			if filter.Match(&trans) {
+				event := map[string]interface{}{}
 				//isFilted = false
 				fmt.Println("found transaction:", trans.Hash)
 				fmt.Println("\tfrom:", trans.From)
 				fmt.Println("\tto:", trans.To)
+				event["from"] = trans.From
+				event["to"] = trans.To
+				event["hash"] = trans.Hash
 				if track.ContractName != "" {
 					if abiObj, ok := campain.abis[track.ContractName]; ok {
 						method, args, err := abiObj.GetMethod(trans.Input)
+						event["method"] = method
+						event["args"] = args
 						if err == nil {
 							fmt.Println("\tmethod:", method, args)
 						}
 					}
+				}
+				for _, report := range track.Reports {
+
+					campain.report(&report, event)
 				}
 			}
 		}

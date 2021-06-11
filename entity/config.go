@@ -6,6 +6,7 @@ type Chain struct {
 	Endpoints []string   `json:"endpoints"`
 	Tracking  []Track    `json:"tracking"`
 	Contracts []Contract `json:"contracts"`
+	Exports   []Export   `json:"exports"`
 }
 type Config struct {
 	Chains []Chain `json:"chains"`

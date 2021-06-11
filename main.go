@@ -62,6 +62,13 @@ func main() {
 
 		camp := campain.NewCampain(chain.Name, time.Second*5)
 
+		for _, export := range chain.Exports {
+			err := camp.AddExport(&export)
+			if err != nil {
+				panic(err)
+			}
+		}
+
 		for _, contract := range chain.Contracts {
 			camp.LoadContract(&contract)
 			if chain.Name == "bsc" {
@@ -76,6 +83,7 @@ func main() {
 
 			camp.Tracking(track)
 		}
+
 		if chain.Name == "bsc" {
 			goworker.AddToolWithControl(chain.Name, &campain.JsonRpcBlackSmith{
 				Campain: camp,

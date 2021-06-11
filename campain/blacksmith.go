@@ -35,3 +35,23 @@ func (blacksmith *EthContractBlackSmith) Make() interface{} {
 	}
 	return tool
 }
+
+type ExportPubsubBlackSmith struct {
+	Campain    *Campain
+	Topic      string
+	ExportName string
+}
+
+//Make make tool
+func (blacksmith *ExportPubsubBlackSmith) Make() interface{} {
+
+	if hub, ok := blacksmith.Campain.pubsubHub[blacksmith.ExportName]; ok {
+		tool, err := NewExportPubSubTool(hub, blacksmith.Topic)
+		if err != nil {
+			fmt.Println(err)
+			return nil
+		}
+		return tool
+	}
+	return nil
+}

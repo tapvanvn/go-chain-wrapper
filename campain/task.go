@@ -57,3 +57,30 @@ func (task *ContractTask) Process(tool interface{}) {
 func (task *ContractTask) ToolLabel() string {
 	return task.tool
 }
+
+type PubsubTask struct {
+	message interface{}
+	tool    string
+}
+
+func NewPubsubTask(tool string, message interface{}) *PubsubTask {
+	return &PubsubTask{
+		tool:    tool,
+		message: message,
+	}
+}
+
+func (task *PubsubTask) Process(tool interface{}) {
+
+	if tool1, ok := tool.(*ToolExportPubSub); ok {
+
+		tool1.AddMessage(task.message)
+
+	} else {
+		fmt.Println("not tool")
+	}
+}
+
+func (task *PubsubTask) ToolLabel() string {
+	return task.tool
+}
