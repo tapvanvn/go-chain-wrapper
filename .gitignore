@@ -19,6 +19,6 @@ go-jsonrpc-wrapper
 config/env.sh
 namespace.txt
 **/token.txt
-bsc
+3rd
 abi_file/*.abi
 config/config.json
