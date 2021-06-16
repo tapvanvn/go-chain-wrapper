@@ -17,15 +17,19 @@ type Command interface {
 }
 
 type ContractCall struct {
-	FuncName string
-	Params   []interface{}
-	Out      *[]interface{}
+	ReportName string
+	Topic      string
+	FuncName   string
+	Params     []interface{}
+	Out        *[]interface{}
 }
 
-func CreateContractCall(funcName string, params []interface{}) *ContractCall {
+func CreateContractCall(funcName string, params []interface{}, reportName string, topic string) *ContractCall {
 	return &ContractCall{
-		FuncName: funcName,
-		Params:   params,
-		Out:      nil,
+		ReportName: reportName,
+		Topic:      topic,
+		FuncName:   funcName,
+		Params:     params,
+		Out:        nil,
 	}
 }

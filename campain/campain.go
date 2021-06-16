@@ -67,6 +67,7 @@ func (campain *Campain) LoadContract(contract *entity.Contract) error {
 		if campain.chainName == "bsc" {
 			abiObj, err := NewEthereumABI(contract.AbiName, contract.Address)
 			if err != nil {
+
 				return err
 			} else {
 				abiObj.Info()
@@ -116,7 +117,17 @@ func (campain *Campain) Tracking(track entity.Track) error {
 	campain.mux.Unlock()
 	return nil
 }
-
+func (campain *Campain) Report(reportName string, topic string, message interface{}) {
+	exportType, ok := campain.exportType[reportName]
+	if !ok || exportType != "wspubsub" {
+		return
+	}
+	toolName := campain.chainName + "." + reportName + "." + topic
+	go goworker.AddTask(&PubsubTask{
+		tool:    toolName,
+		message: message,
+	})
+}
 func (campain *Campain) report(report *entity.Report, message interface{}) {
 	exportType, ok := campain.exportType[report.Name]
 	if !ok || exportType != "wspubsub" {

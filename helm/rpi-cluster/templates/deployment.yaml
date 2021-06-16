@@ -27,60 +27,22 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }} 
           env:
-            - name: CONNECT_STRING_REDIS
-              valueFrom:
-                secretKeyRef:
-                  name: rpi-config
-                  key: CONNECT_STRING_REDIS
-            - name: CONNECT_STRING_DOCUMENTDB
-              valueFrom:
-                secretKeyRef:
-                  name: rpi-config
-                  key: CONNECT_STRING_DOCUMENTDB
-            - name: DOCUMENTDB_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: rpi-config
-                  key: DOCUMENTDB_DATABASE
-            - name: ADMIN_PUBLIC_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: rpi-config
-                  key: ADMIN_PUBLIC_KEY
-            - name: SMTP_SERVER
-              valueFrom:
-                secretKeyRef:
-                  name: rpi-config
-                  key: SMTP_SERVER
-            - name: SMTP_ACCOUNT
-              valueFrom:
-                secretKeyRef:
-                  name: rpi-config
-                  key: SMTP_ACCOUNT
-            - name: SMTP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: rpi-config
-                  key: SMTP_PASSWORD
-            - name: SMTP_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: rpi-config
-                  key: SMTP_PORT
-                
+            - name: PORT
+              value: "{{ .Values.service.targetPort }}"
+              
           ports:
             - name: {{ .Values.service.name }}
               containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /v1/healthz
+              path: /healthz
               port: 8080
           readinessProbe:
             httpGet:
-              path: /v1/healthz
+              path: /healthz
               port: 8080
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

@@ -5,12 +5,10 @@
 replicaCount: 1
 namespace: default
 image:
-  repository: rpi_jsonrpc_wrapper
+  repository: tapvanvn/rpi_jsonrpc_wrapper
   pullPolicy: IfNotPresent
   tag: "0.0.1"
 
-imagePullSecrets: 
-  - name: gcr-json-key
 nameOverride: ""
 fullnameOverride: ""
 

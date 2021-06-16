@@ -38,9 +38,9 @@ func NewEthereumABI(abiFileName string, address string) (IABI, error) {
 	ethABI := &EthereumABI{
 		ContractAddress: address,
 	}
-
-	file, err := os.Open(system.RootPath + "/abi_file/" + abiFileName)
-
+	filepath := system.RootPath + "/abi_file/" + abiFileName
+	file, err := os.Open(filepath)
+	fmt.Println("load abi:", filepath)
 	if err != nil {
 
 		return nil, err

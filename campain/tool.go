@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/tapvanvn/go-jsonrpc-wrapper/system"
 )
 
 var __tool_id int = 0
@@ -166,7 +168,7 @@ func NewTool(campain *Campain) (*Tool, error) {
 	var command string = ""
 
 	if campain.chainName == "bsc" {
-		command = "./bsc/geth"
+		command = system.RootPath + "/3rd/bsc/geth"
 	}
 
 	if command == "" {

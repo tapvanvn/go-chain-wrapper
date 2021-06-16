@@ -83,13 +83,17 @@ func (tool *ContractTool) process() {
 		if err != nil {
 
 			fmt.Println("contract error", err)
+
 		} else {
 			fmt.Println("contract call:", out)
 			cmd.Out = &out
+			if cmd.ReportName != "" && cmd.Topic != "" {
+
+				tool.campain.Report(cmd.ReportName, cmd.Topic, cmd)
+			}
 		}
 		//error
 		tool.waitingCommand = nil
-
 		//process command
 	}
 }

@@ -70,7 +70,11 @@ func main() {
 		}
 
 		for _, contract := range chain.Contracts {
-			camp.LoadContract(&contract)
+			err := camp.LoadContract(&contract)
+			if err != nil {
+				fmt.Println(err.Error())
+				panic(err)
+			}
 			if chain.Name == "bsc" {
 				goworker.AddToolWithControl(chain.Name+"."+contract.Name, &campain.EthContractBlackSmith{
 					Campain:      camp,
