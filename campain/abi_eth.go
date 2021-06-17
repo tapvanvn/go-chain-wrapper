@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/system"
 )
@@ -96,6 +97,26 @@ func (ethAbi *EthereumABI) GetMethod(input string) (string, []interface{}, error
 	return method.Name, args, nil
 
 }
+func (ethAbi *EthereumABI) NewContract(address string, backendURL string) (IContract, error) {
+	backend, err := ethclient.Dial(backendURL) //"https://bsc-dataseed1.binance.org")
+	if err != nil {
+		return nil, err
+	}
+	contract, err := ethAbi.bindContract(common.HexToAddress(address), backend, backend, backend)
+	if err != nil {
+		return nil, err
+	}
+	return &EthContract{contract: contract}, nil
+}
+
+type EthContract struct {
+	contract *bind.BoundContract
+}
+
+func (contract *EthContract) Call(result *[]interface{}, method string, params ...interface{}) error {
+
+	return contract.contract.Call(nil, result, method, params...)
+}
 
 // bindStore binds a generic wrapper to an already deployed contract.
 func (ethAbi *EthereumABI) bindContract(address common.Address,
@@ -165,6 +186,7 @@ type ContractTransactorRaw struct {
 	Contract *ContractTransactor // Generic write-only contract binding to access the raw methods on
 }
 
+/*
 // NewStore creates a new instance of Store, bound to a specific deployed contract.
 func (ethAbi *EthereumABI) NewContract(address common.Address, backend bind.ContractBackend) (*Contract, error) {
 	contract, err := ethAbi.bindContract(address, backend, backend, backend)
@@ -175,6 +197,7 @@ func (ethAbi *EthereumABI) NewContract(address common.Address, backend bind.Cont
 		ContractTransactor: ContractTransactor{contract: contract},
 		ContractFilterer:   ContractFilterer{contract: contract}}, nil
 }
+*/
 
 // NewStoreCaller creates a new read-only instance of Store, bound to a specific deployed contract.
 func (ethAbi *EthereumABI) NewContractCaller(address common.Address, caller bind.ContractCaller) (*ContractCaller, error) {

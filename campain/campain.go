@@ -26,6 +26,7 @@ type Campain struct {
 	filters         map[filter.IFilter]*entity.Track
 	lastBlockNumber uint64
 	abis            map[string]IABI
+	contractAddress map[string]string
 	exportType      map[string]string
 	pubsubHub       map[string]gopubsubengine.Hub
 }
@@ -41,6 +42,7 @@ func NewCampain(chain string, timeRange time.Duration) *Campain {
 		filters:         make(map[filter.IFilter]*entity.Track),
 		lastBlockNumber: 0,
 		abis:            map[string]IABI{},
+		contractAddress: map[string]string{},
 		exportType:      map[string]string{},
 		pubsubHub:       make(map[string]gopubsubengine.Hub),
 	}
@@ -98,6 +100,7 @@ func (campain *Campain) LoadContract(contract *entity.Contract) error {
 			} else {
 				abiObj.Info()
 				campain.abis[contract.Name] = abiObj
+				campain.contractAddress[contract.Name] = contract.Address
 			}
 		} else if campain.chainName == "kai" {
 			abiObj, err := NewKaiABI(contract.AbiName, contract.Address)
@@ -107,6 +110,7 @@ func (campain *Campain) LoadContract(contract *entity.Contract) error {
 			} else {
 				abiObj.Info()
 				campain.abis[contract.Name] = abiObj
+				campain.contractAddress[contract.Name] = contract.Address
 			}
 		}
 	}

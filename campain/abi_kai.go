@@ -12,8 +12,10 @@ import (
 	"github.com/kardiachain/go-kardia/lib/abi"
 	"github.com/kardiachain/go-kardia/lib/common"
 	"github.com/kardiachain/go-kardia/types"
+	"go.uber.org/zap"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/system"
+	"github.com/tapvanvn/go-kaiclient/kardia"
 )
 
 var (
@@ -92,16 +94,34 @@ func (kaiAbi *KaiABI) GetMethod(input string) (string, []interface{}, error) {
 
 }
 
-/*
 // bindStore binds a generic wrapper to an already deployed contract.
-func (ethAbi *KaiABI) bindContract(address common.Address,
-	caller bind.ContractCaller,
-	transactor bind.ContractTransactor,
-	filterer bind.ContractFilterer) (*bind.BoundContract, error) {
+func (kaiABI *KaiABI) NewContract(address string, backendURL string) (IContract, error) {
+	byteAddress := common.HexToAddress(address)
+	lgr, err := zap.NewProduction()
+	if err != nil {
+		return nil, err
+	}
+	node, err := kardia.NewNode(backendURL, lgr)
 
-	return kardia.NewBoundContract(address, ethAbi.Abi, caller, transactor, filterer), nil
+	if err != nil {
+		return nil, err
+	}
+	contract := &KaiContract{
+		contract: kardia.NewBoundContract(node, &kaiABI.Abi, byteAddress),
+	}
+	return contract, nil
 }
 
+type KaiContract struct {
+	contract *kardia.BoundContract
+}
+
+func (contract *KaiContract) Call(result *[]interface{}, method string, params ...interface{}) error {
+
+	return contract.contract.Call(nil, result, method, params...)
+}
+
+/*
 // Store is an auto generated Go binding around an Ethereum contract.
 type KaiContract struct {
 	ContractCaller     // Read-only binding to the contract
@@ -232,4 +252,5 @@ func (_Store *ContractTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.T
 func (_Store *ContractTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Store.Contract.contract.Transact(opts, method, params...)
 }
+
 */

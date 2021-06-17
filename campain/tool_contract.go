@@ -4,15 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 type ContractTool struct {
-	id       int
-	contract *Contract
-	campain  *Campain
-	backend  *ethclient.Client
+	id         int
+	contract   IContract
+	campain    *Campain
+	backendURL string
 }
 
 func NewContractTool(campain *Campain, contractName string, backendURL string) (*ContractTool, error) {
@@ -21,26 +19,21 @@ func NewContractTool(campain *Campain, contractName string, backendURL string) (
 	tool := &ContractTool{id: __tool_id,
 		campain: campain,
 	}
-	backend, err := ethclient.Dial(backendURL) //"https://bsc-dataseed1.binance.org")
-	if err != nil {
-		return nil, err
-	}
-	tool.backend = backend
 
 	abiObj, ok := campain.abis[contractName]
 	if !ok {
 		return nil, errors.New("abi not load")
 	}
-	_ = abiObj
-	/*ethAbiObj := abiObj.(*EthereumABI)
-	address := common.HexToAddress(ethAbiObj.ContractAddress)
-
-	contract, err := ethAbiObj.NewContract(address, tool.backend)
+	contractAddress, ok := campain.contractAddress[contractName]
+	if !ok {
+		return nil, errors.New("contract address not found")
+	}
+	contract, err := abiObj.NewContract(contractAddress, backendURL)
 	if err != nil {
 		return nil, err
 	}
 	tool.contract = contract
-	*/
+
 	return tool, nil
 }
 
@@ -53,9 +46,9 @@ func (tool *ContractTool) Process(call *ContractCall) {
 
 	if call.Params == nil || len(call.Params) == 0 {
 
-		err = tool.contract.ContractCaller.contract.Call(nil, &outs, call.FuncName)
+		err = tool.contract.Call(&outs, call.FuncName)
 	} else {
-		err = tool.contract.ContractCaller.contract.Call(nil, &outs, call.FuncName, call.Params...)
+		err = tool.contract.Call(&outs, call.FuncName, call.Params...)
 	}
 
 	if err != nil {
