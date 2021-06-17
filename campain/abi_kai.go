@@ -9,33 +9,28 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/event"
+	"github.com/kardiachain/go-kardia/lib/abi"
+	"github.com/kardiachain/go-kardia/lib/common"
+	"github.com/kardiachain/go-kardia/types"
+
 	"github.com/tapvanvn/go-jsonrpc-wrapper/system"
 )
 
 var (
 	_ = big.NewInt
 	_ = strings.NewReader
-	_ = ethereum.NotFound
-	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
-	_ = event.NewSubscription
 )
 
-type EthereumABI struct {
+type KaiABI struct {
 	Abi             abi.ABI
 	ContractAddress string
 }
 
-func NewEthereumABI(abiFileName string, address string) (IABI, error) {
+func NewKaiABI(abiFileName string, address string) (IABI, error) {
 	// load contract ABI
-	ethABI := &EthereumABI{
+	kaiABI := &KaiABI{
 		ContractAddress: address,
 	}
 	filepath := system.RootPath + "/abi_file/" + abiFileName
@@ -52,23 +47,23 @@ func NewEthereumABI(abiFileName string, address string) (IABI, error) {
 	if err != nil {
 		return nil, err
 	}
-	ethABI.Abi = abiObj
+	kaiABI.Abi = abiObj
 
-	return ethABI, nil
+	return kaiABI, nil
 }
 
-func (ethAbi *EthereumABI) Info() {
-	fmt.Println("events:", len(ethAbi.Abi.Events))
-	for _, event := range ethAbi.Abi.Events {
+func (kaiAbi *KaiABI) Info() {
+	fmt.Println("events:", len(kaiAbi.Abi.Events))
+	for _, event := range kaiAbi.Abi.Events {
 		fmt.Println("\t", event.Name, event.Inputs)
 	}
-	fmt.Println("methods:", len(ethAbi.Abi.Methods))
-	for _, method := range ethAbi.Abi.Methods {
+	fmt.Println("methods:", len(kaiAbi.Abi.Methods))
+	for _, method := range kaiAbi.Abi.Methods {
 		fmt.Println("\t", method.Name, method.Inputs)
 	}
 }
 
-func (ethAbi *EthereumABI) GetMethod(input string) (string, []interface{}, error) {
+func (kaiAbi *KaiABI) GetMethod(input string) (string, []interface{}, error) {
 
 	if len(input) < 10 {
 		return "", nil, errors.New("invalid input:" + input)
@@ -79,7 +74,7 @@ func (ethAbi *EthereumABI) GetMethod(input string) (string, []interface{}, error
 		return "", nil, err
 	}
 
-	method, err := ethAbi.Abi.MethodById(decodedSig)
+	method, err := kaiAbi.Abi.MethodById(decodedSig)
 	if err != nil {
 		return "", nil, err
 	}
@@ -97,40 +92,41 @@ func (ethAbi *EthereumABI) GetMethod(input string) (string, []interface{}, error
 
 }
 
+/*
 // bindStore binds a generic wrapper to an already deployed contract.
-func (ethAbi *EthereumABI) bindContract(address common.Address,
+func (ethAbi *KaiABI) bindContract(address common.Address,
 	caller bind.ContractCaller,
 	transactor bind.ContractTransactor,
 	filterer bind.ContractFilterer) (*bind.BoundContract, error) {
 
-	return bind.NewBoundContract(address, ethAbi.Abi, caller, transactor, filterer), nil
+	return kardia.NewBoundContract(address, ethAbi.Abi, caller, transactor, filterer), nil
 }
 
 // Store is an auto generated Go binding around an Ethereum contract.
-type Contract struct {
+type KaiContract struct {
 	ContractCaller     // Read-only binding to the contract
 	ContractTransactor // Write-only binding to the contract
 	ContractFilterer   // Log filterer for contract events
 }
 
 // StoreCaller is an auto generated read-only Go binding around an Ethereum contract.
-type ContractCaller struct {
+type KaiContractCaller struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // StoreTransactor is an auto generated write-only Go binding around an Ethereum contract.
-type ContractTransactor struct {
+type KaiContractTransactor struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // StoreFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
-type ContractFilterer struct {
+type KaiContractFilterer struct {
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // StoreSession is an auto generated Go binding around an Ethereum contract,
 // with pre-set call and transact options.
-type ContractSession struct {
+type KaiContractSession struct {
 	Contract     *Contract         // Generic contract binding to set the session for
 	CallOpts     bind.CallOpts     // Call options to use throughout this session
 	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
@@ -138,20 +134,20 @@ type ContractSession struct {
 
 // StoreCallerSession is an auto generated read-only Go binding around an Ethereum contract,
 // with pre-set call options.
-type ContractCallerSession struct {
+type KaiContractCallerSession struct {
 	Contract *ContractCaller // Generic contract caller binding to set the session for
 	CallOpts bind.CallOpts   // Call options to use throughout this session
 }
 
 // StoreTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
 // with pre-set transact options.
-type ContractTransactorSession struct {
+type KaiContractTransactorSession struct {
 	Contract     *ContractTransactor // Generic contract transactor binding to set the session for
 	TransactOpts bind.TransactOpts   // Transaction auth options to use throughout this session
 }
 
 // StoreRaw is an auto generated low-level Go binding around an Ethereum contract.
-type ContractRaw struct {
+type KaiContractRaw struct {
 	Contract *Contract // Generic contract binding to access the raw methods on
 }
 
@@ -166,8 +162,9 @@ type ContractTransactorRaw struct {
 }
 
 // NewStore creates a new instance of Store, bound to a specific deployed contract.
-func (ethAbi *EthereumABI) NewContract(address common.Address, backend bind.ContractBackend) (*Contract, error) {
+func (ethAbi *KaiABI) NewContract(address common.Address, backend bind.ContractBackend) (*Contract, error) {
 	contract, err := ethAbi.bindContract(address, backend, backend, backend)
+
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +174,7 @@ func (ethAbi *EthereumABI) NewContract(address common.Address, backend bind.Cont
 }
 
 // NewStoreCaller creates a new read-only instance of Store, bound to a specific deployed contract.
-func (ethAbi *EthereumABI) NewContractCaller(address common.Address, caller bind.ContractCaller) (*ContractCaller, error) {
+func (ethAbi *KaiABI) NewContractCaller(address common.Address, caller bind.ContractCaller) (*ContractCaller, error) {
 	contract, err := ethAbi.bindContract(address, caller, nil, nil)
 	if err != nil {
 		return nil, err
@@ -186,7 +183,7 @@ func (ethAbi *EthereumABI) NewContractCaller(address common.Address, caller bind
 }
 
 // NewStoreTransactor creates a new write-only instance of Store, bound to a specific deployed contract.
-func (ethAbi *EthereumABI) NewStoreTransactor(address common.Address, transactor bind.ContractTransactor) (*ContractTransactor, error) {
+func (ethAbi *KaiABI) NewStoreTransactor(address common.Address, transactor bind.ContractTransactor) (*ContractTransactor, error) {
 	contract, err := ethAbi.bindContract(address, nil, transactor, nil)
 	if err != nil {
 		return nil, err
@@ -195,7 +192,7 @@ func (ethAbi *EthereumABI) NewStoreTransactor(address common.Address, transactor
 }
 
 // NewStoreFilterer creates a new log filterer instance of Store, bound to a specific deployed contract.
-func (ethAbi *EthereumABI) NewStoreFilterer(address common.Address, filterer bind.ContractFilterer) (*ContractFilterer, error) {
+func (ethAbi *KaiABI) NewStoreFilterer(address common.Address, filterer bind.ContractFilterer) (*ContractFilterer, error) {
 	contract, err := ethAbi.bindContract(address, nil, nil, filterer)
 	if err != nil {
 		return nil, err
@@ -203,10 +200,11 @@ func (ethAbi *EthereumABI) NewStoreFilterer(address common.Address, filterer bin
 	return &ContractFilterer{contract: contract}, nil
 }
 
-func (_Store *ContractRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+func (_Store *KaiContractRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+
 	return _Store.Contract.ContractCaller.contract.Call(opts, result, method, params...)
 }
-
+/*
 func (_Store *ContractRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Store.Contract.ContractTransactor.contract.Transfer(opts)
 }
@@ -234,3 +232,4 @@ func (_Store *ContractTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.T
 func (_Store *ContractTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Store.Contract.contract.Transact(opts, method, params...)
 }
+*/

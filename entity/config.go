@@ -17,6 +17,7 @@ func (config *Config) GetNumWorker() int {
 	for _, chain := range config.Chains {
 		number += chain.NumWorker
 	}
+	number = number + 1
 	return number
 }
 

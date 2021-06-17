@@ -8,3 +8,9 @@ RUN apk add make linux-headers
 RUN mkdir -p /3rd/bsc
 
 RUN cd /3rd/bsc && git clone https://github.com/binance-chain/bsc ./ && make geth
+
+RUN mkdir -p /src
+
+COPY ./ /src/
+
+RUN cd /src && go get ./...

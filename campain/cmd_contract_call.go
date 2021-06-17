@@ -3,14 +3,14 @@ package campain
 type CmdContractCall struct {
 	FuncName string
 	Params   []interface{}
-	Out      []interface{}
+	Out      []string
 }
 
 func CreateCmdContractCall(funcName string, params []interface{}) *CmdContractCall {
 	return &CmdContractCall{
 		FuncName: funcName,
 		Params:   params,
-		Out:      make([]interface{}, 0),
+		Out:      make([]string, 0),
 	}
 }
 

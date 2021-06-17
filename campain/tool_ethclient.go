@@ -1,57 +1,75 @@
 package campain
 
 import (
-	"time"
+	"context"
+	"encoding/base64"
+	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 )
 
 type EthClientTool struct {
-	id             int
-	ready          bool
-	commands       chan Command
-	waitingCommand Command
-	campain        *Campain
-	backend        *ethclient.Client
+	id      int
+	ready   bool
+	campain *Campain
+	backend *ethclient.Client
 }
 
-func NewEthClientTool(campain *Campain) (*EthClientTool, error) {
+func NewEthClientTool(campain *Campain, backendURL string) (*EthClientTool, error) {
 
 	__tool_id += 1
 	tool := &EthClientTool{id: __tool_id,
-		ready:          false,
-		commands:       make(chan Command),
-		waitingCommand: nil,
-		campain:        campain,
+		ready:   false,
+		campain: campain,
 	}
-	backend, err := ethclient.Dial("https://bsc-dataseed1.binance.org")
+	backend, err := ethclient.Dial(backendURL) //"https://bsc-dataseed1.binance.org")
 	if err != nil {
 		return nil, err
 	}
 	tool.backend = backend
-	go tool.process()
 
 	return tool, nil
 }
-func (tool *EthClientTool) AddCommand(cmd Command) {
-	tool.commands <- cmd
+
+func (tool *EthClientTool) GetLatestBlockNumber() (uint64, error) {
+	return tool.backend.BlockNumber(context.TODO())
 }
 
-func (tool *EthClientTool) process() {
+func (tool *EthClientTool) GetCampain() *Campain {
+	return tool.campain
+}
 
-	for {
-
-		if tool.waitingCommand != nil {
-			time.Sleep(time.Microsecond * 20)
-			continue
-		}
-		cmd, ok := <-tool.commands
-
-		if !ok {
-			break
-		}
-
-		tool.waitingCommand = cmd
-		//process command
+func (tool *EthClientTool) GetBlockTransaction(blockNumber uint64) ([]*entity.Transaction, error) {
+	blockBigNum := big.NewInt(int64(blockNumber))
+	ctx := context.TODO()
+	block, err := tool.backend.BlockByNumber(ctx, blockBigNum)
+	if err != nil {
+		return nil, err
 	}
+	hash := block.Hash()
+	transCount, err := tool.backend.TransactionCount(ctx, hash)
+	if err != nil {
+		return nil, err
+	}
+	result := []*entity.Transaction{}
+	for i := uint(0); i < transCount; i++ {
+		trans, err := tool.backend.TransactionInBlock(ctx, hash, i)
+		if err != nil {
+			return nil, err
+		}
+		entityTrans := &entity.Transaction{BlockHash: trans.Hash().Hex(),
+			BlockNumber:      strconv.FormatUint(blockNumber, 10),
+			Gas:              strconv.FormatUint(trans.Gas(), 10),
+			GasPrice:         trans.GasPrice().String(),
+			Hash:             trans.Hash().Hex(),
+			Input:            base64.RawStdEncoding.EncodeToString(trans.Data()),
+			From:             "",
+			To:               trans.To().Hex(),
+			TransactionIndex: strconv.FormatUint(uint64(i), 10),
+		}
+		result = append(result, entityTrans)
+	}
+	return result, nil
 }

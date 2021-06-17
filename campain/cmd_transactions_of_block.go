@@ -9,11 +9,11 @@ import (
 
 type CmdTransactionsOfBlock struct {
 	id           int
-	BlockNumber  int64
+	BlockNumber  uint64
 	Transactions []*entity.Transaction
 }
 
-func CreateCmdTransactionsOfBlock(blockNumber int64) *CmdTransactionsOfBlock {
+func CreateCmdTransactionsOfBlock(blockNumber uint64) *CmdTransactionsOfBlock {
 	return &CmdTransactionsOfBlock{
 		BlockNumber: blockNumber,
 	}
@@ -32,12 +32,29 @@ func (cmd *CmdTransactionsOfBlock) GetID() int {
 	return cmd.id
 }
 
-func (cmd *CmdTransactionsOfBlock) GetCommand() string {
-	if cmd.BlockNumber == -1 {
+func (cmd *CmdTransactionsOfBlock) Do(tool ITool) {
+	transactions, err := tool.GetBlockTransaction(cmd.BlockNumber)
+	if err != nil {
+		return
+	}
+	cmd.Transactions = transactions
+	cmd.Done(tool.GetCampain())
+}
+
+func (cmd *CmdTransactionsOfBlock) GetCommand(chain string) string {
+	if chain == "kai" {
+		if cmd.BlockNumber == 0 {
+			return "kai.getTransactionsByBlockNumber(\"latest\")"
+		}
+		//num, err := strconv.ParseInt(hex_num, 16, 64)
+		hexNum := strconv.FormatUint(cmd.BlockNumber, 16)
+		return "kai.getTransactionsByBlockNumber(\"0x" + hexNum + "\")"
+	}
+	if cmd.BlockNumber == 0 {
 		return "eth.getTransactionsByBlockNumber(\"latest\")"
 	}
 	//num, err := strconv.ParseInt(hex_num, 16, 64)
-	hexNum := strconv.FormatInt(cmd.BlockNumber, 16)
+	hexNum := strconv.FormatUint(cmd.BlockNumber, 16)
 	return "eth.getTransactionsByBlockNumber(\"0x" + hexNum + "\")"
 }
 

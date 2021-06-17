@@ -4,7 +4,7 @@ import "fmt"
 
 type CmdGetLatestBlockNumber struct {
 	id          int
-	BlockNumber int64
+	BlockNumber uint64
 }
 
 func CreateCmdLatestBlockNumber() *CmdGetLatestBlockNumber {
@@ -19,7 +19,20 @@ func (cmd *CmdGetLatestBlockNumber) GetID() int {
 	return cmd.id
 }
 
-func (cmd *CmdGetLatestBlockNumber) GetCommand() string {
+func (cmd *CmdGetLatestBlockNumber) Do(tool ITool) {
+	blockNumber, err := tool.GetLatestBlockNumber()
+	if err != nil {
+		//TODO: process error
+		return
+	}
+	cmd.BlockNumber = blockNumber
+	cmd.Done(tool.GetCampain())
+}
+
+func (cmd *CmdGetLatestBlockNumber) GetCommand(chain string) string {
+	if chain == "kai" {
+		return "kai.blockNumber"
+	}
 	return "eth.blockNumber"
 }
 

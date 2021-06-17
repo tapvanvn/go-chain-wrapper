@@ -10,18 +10,20 @@ func IssueID() int {
 type Command interface {
 	Init()
 	GetID() int
-	GetCommand() string
+	GetCommand(chain string) string
+	Do(tool ITool)
 	GetResponseInterface() interface{}
 	Debug()
 	Done(campain *Campain)
 }
 
 type ContractCall struct {
-	ReportName string
-	Topic      string
-	FuncName   string
-	Params     []interface{}
-	Out        *[]interface{}
+	ReportName string        `json:"-"`
+	Topic      string        `json:"-"`
+	FuncName   string        `json:"func_name"`
+	Params     []interface{} `json:"-"`
+	Out        *[][]byte     `json:"output"`
+	Input      *[][]byte     `json:"input"`
 }
 
 func CreateContractCall(funcName string, params []interface{}, reportName string, topic string) *ContractCall {
@@ -31,5 +33,6 @@ func CreateContractCall(funcName string, params []interface{}, reportName string
 		FuncName:   funcName,
 		Params:     params,
 		Out:        nil,
+		Input:      nil,
 	}
 }

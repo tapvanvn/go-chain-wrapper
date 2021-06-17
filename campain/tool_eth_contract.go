@@ -1,34 +1,27 @@
 package campain
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 type ContractTool struct {
-	id             int
-	ready          bool
-	contract       *Contract
-	commands       chan *ContractCall
-	waitingCommand *ContractCall
-	campain        *Campain
-	backend        *ethclient.Client
+	id       int
+	contract *Contract
+	campain  *Campain
+	backend  *ethclient.Client
 }
 
-func NewContractTool(campain *Campain, contractName string) (*ContractTool, error) {
+func NewContractTool(campain *Campain, contractName string, backendURL string) (*ContractTool, error) {
 
 	__tool_id += 1
 	tool := &ContractTool{id: __tool_id,
-		ready:          false,
-		commands:       make(chan *ContractCall),
-		waitingCommand: nil,
-		campain:        campain,
+		campain: campain,
 	}
-	backend, err := ethclient.Dial("https://bsc-dataseed1.binance.org")
+	backend, err := ethclient.Dial(backendURL) //"https://bsc-dataseed1.binance.org")
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +31,8 @@ func NewContractTool(campain *Campain, contractName string) (*ContractTool, erro
 	if !ok {
 		return nil, errors.New("abi not load")
 	}
-	ethAbiObj := abiObj.(*EthereumABI)
+	_ = abiObj
+	/*ethAbiObj := abiObj.(*EthereumABI)
 	address := common.HexToAddress(ethAbiObj.ContractAddress)
 
 	contract, err := ethAbiObj.NewContract(address, tool.backend)
@@ -46,54 +40,46 @@ func NewContractTool(campain *Campain, contractName string) (*ContractTool, erro
 		return nil, err
 	}
 	tool.contract = contract
-
-	go tool.process()
-
+	*/
 	return tool, nil
 }
-func (tool *ContractTool) AddCall(call *ContractCall) {
-	tool.commands <- call
-}
 
-func (tool *ContractTool) process() {
+func (tool *ContractTool) Process(call *ContractCall) {
 
-	for {
+	var outs []interface{}
+	var err error = nil
 
-		if tool.waitingCommand != nil {
-			time.Sleep(time.Microsecond * 20)
-			continue
+	fmt.Println("do contract:", call.FuncName)
+
+	if call.Params == nil || len(call.Params) == 0 {
+
+		err = tool.contract.ContractCaller.contract.Call(nil, &outs, call.FuncName)
+	} else {
+		err = tool.contract.ContractCaller.contract.Call(nil, &outs, call.FuncName, call.Params...)
+	}
+
+	if err != nil {
+
+		fmt.Println("contract error", err)
+
+	} else {
+
+		results := [][]byte{}
+		inputs := [][]byte{}
+		for _, param := range call.Params {
+			inputData, _ := json.Marshal(param)
+			inputs = append(inputs, inputData)
 		}
-		cmd, ok := <-tool.commands
-
-		if !ok {
-			break
+		for _, out := range outs {
+			outData, _ := json.Marshal(out)
+			results = append(results, outData)
 		}
+		call.Out = &results
+		call.Input = &inputs
 
-		tool.waitingCommand = cmd
-		var out []interface{}
-		var err error = nil
+		if call.ReportName != "" && call.Topic != "" {
 
-		if cmd.Params == nil || len(cmd.Params) == 0 {
-
-			err = tool.contract.ContractCaller.contract.Call(nil, &out, cmd.FuncName)
-		} else {
-			err = tool.contract.ContractCaller.contract.Call(nil, &out, cmd.FuncName, cmd.Params...)
+			tool.campain.Report(call.ReportName, call.Topic, call)
 		}
-
-		if err != nil {
-
-			fmt.Println("contract error", err)
-
-		} else {
-			fmt.Println("contract call:", out)
-			cmd.Out = &out
-			if cmd.ReportName != "" && cmd.Topic != "" {
-
-				tool.campain.Report(cmd.ReportName, cmd.Topic, cmd)
-			}
-		}
-		//error
-		tool.waitingCommand = nil
-		//process command
 	}
 }

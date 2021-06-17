@@ -3,6 +3,7 @@ package route
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/campain"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/route/form"
@@ -51,9 +52,23 @@ func callContract(context *gorouter.RouteContext) {
 		response.BadRequest(context, 0, err.Error(), nil)
 		return
 	}
-	call := campain.CreateContractCall(frm.Name, frm.Params, frm.ReportName, frm.Topic)
+	inputs := make([]interface{}, 0)
+	for _, param := range frm.Params {
+		if param.Type == "uint256" {
+			input := &big.Int{}
+			err := json.Unmarshal(param.Value, input)
+			if err != nil {
+				fmt.Println("parse param error", err)
+				response.BadRequest(context, 0, err.Error(), nil)
+				return
+			}
+			inputs = append(inputs, input)
+		}
+	}
 
+	call := campain.CreateContractCall(frm.Name, inputs, frm.ReportName, frm.Topic)
+	fmt.Println("call:", call)
 	//TODO: check if chain name is valid
 	task := campain.NewContractTask(frm.ChainName, call)
-	goworker.AddTask(task)
+	go goworker.AddTask(task)
 }

@@ -143,7 +143,7 @@ func (tool *Tool) processCommand() {
 		}
 
 		tool.waitingCommand = cmd
-		tool.stdin.Write([]byte(cmd.GetCommand() + "\n"))
+		tool.stdin.Write([]byte(cmd.GetCommand(tool.campain.chainName) + "\n"))
 	}
 }
 
@@ -151,7 +151,7 @@ func (tool *Tool) Close() {
 
 }
 
-func NewTool(campain *Campain) (*Tool, error) {
+func NewTool(campain *Campain, backendURL string) (*Tool, error) {
 
 	__tool_id += 1
 	tool := &Tool{id: __tool_id,
@@ -167,7 +167,7 @@ func NewTool(campain *Campain) (*Tool, error) {
 
 	var command string = ""
 
-	if campain.chainName == "bsc" {
+	if campain.chainName == "bsc" || campain.chainName == "kai" {
 		command = system.RootPath + "/3rd/bsc/geth"
 	}
 
@@ -175,7 +175,7 @@ func NewTool(campain *Campain) (*Tool, error) {
 		return nil, errors.New("unknown chain")
 	}
 
-	tool.proc = exec.Command(command, "attach", "https://bsc-dataseed1.binance.org")
+	tool.proc = exec.Command(command, "attach", backendURL) //"https://bsc-dataseed1.binance.org")
 
 	stdin, _ := tool.proc.StdinPipe()
 
