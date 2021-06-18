@@ -10,7 +10,6 @@ import (
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/filter"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/utility"
 	"github.com/tapvanvn/gopubsubengine"
 	"github.com/tapvanvn/gopubsubengine/wspubsub"
 	"github.com/tapvanvn/goworker"
@@ -235,5 +234,5 @@ func (campain *Campain) Run() {
 	go campain.processBlockNumber()
 	go campain.processTransaction()
 	campain.isRun = true
-	utility.Schedule(campain.run, campain.timeRange)
+	//#utility.Schedule(campain.run, campain.timeRange)
 }

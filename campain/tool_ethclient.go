@@ -3,6 +3,7 @@ package campain
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"math/big"
 	"strconv"
 
@@ -59,6 +60,15 @@ func (tool *EthClientTool) GetBlockTransaction(blockNumber uint64) ([]*entity.Tr
 		if err != nil {
 			return nil, err
 		}
+		if trans == nil {
+			fmt.Println("transaction fail")
+			continue
+		}
+		to := trans.To()
+		toAddress := ""
+		if to != nil {
+			toAddress = to.Hex()
+		}
 		entityTrans := &entity.Transaction{BlockHash: trans.Hash().Hex(),
 			BlockNumber:      strconv.FormatUint(blockNumber, 10),
 			Gas:              strconv.FormatUint(trans.Gas(), 10),
@@ -66,7 +76,7 @@ func (tool *EthClientTool) GetBlockTransaction(blockNumber uint64) ([]*entity.Tr
 			Hash:             trans.Hash().Hex(),
 			Input:            base64.RawStdEncoding.EncodeToString(trans.Data()),
 			From:             "",
-			To:               trans.To().Hex(),
+			To:               toAddress,
 			TransactionIndex: strconv.FormatUint(uint64(i), 10),
 		}
 		result = append(result, entityTrans)

@@ -1,6 +1,7 @@
 package campain
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -107,18 +108,43 @@ func (kaiABI *KaiABI) NewContract(address string, backendURL string) (IContract,
 		return nil, err
 	}
 	contract := &KaiContract{
+		node:     node,
+		address:  address,
+		Abi:      &kaiABI.Abi,
 		contract: kardia.NewBoundContract(node, &kaiABI.Abi, byteAddress),
 	}
 	return contract, nil
 }
 
 type KaiContract struct {
+	node     kardia.Node
+	address  string
+	Abi      *abi.ABI
 	contract *kardia.BoundContract
 }
 
 func (contract *KaiContract) Call(result *[]interface{}, method string, params ...interface{}) error {
 
-	return contract.contract.Call(nil, result, method, params...)
+	payload, err := contract.contract.Abi.Pack(method, params...)
+	if err != nil {
+		fmt.Println("call error", err)
+		return err
+	}
+	res, err := contract.node.KardiaCall(context.TODO(), kardia.ConstructCallArgs(contract.address, payload))
+
+	resResult, err := contract.contract.Abi.Unpack(method, res)
+	if result == nil {
+		result = new([]interface{})
+	}
+	fmt.Println("resResult", resResult)
+	if err != nil {
+		return err
+	}
+
+	*result = resResult
+	fmt.Println("result:", result)
+	return nil
+	//return contract.contract.Call(nil, result, method, params...)
 }
 
 /*

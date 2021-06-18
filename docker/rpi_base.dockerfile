@@ -14,3 +14,5 @@ RUN mkdir -p /src
 COPY ./ /src/
 
 RUN cd /src && go get ./...
+
+RUN rm -rf /src

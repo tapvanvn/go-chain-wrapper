@@ -50,7 +50,7 @@ func (tool *ContractTool) Process(call *ContractCall) {
 	} else {
 		err = tool.contract.Call(&outs, call.FuncName, call.Params...)
 	}
-
+	fmt.Println("result", outs)
 	if err != nil {
 
 		fmt.Println("contract error", err)
@@ -69,6 +69,8 @@ func (tool *ContractTool) Process(call *ContractCall) {
 		}
 		call.Out = &results
 		call.Input = &inputs
+
+		fmt.Println("call", call)
 
 		if call.ReportName != "" && call.Topic != "" {
 

@@ -1,10 +1,8 @@
 
-FROM arm32v7/golang:1.16-alpine AS build
+FROM tapvanvn/rpi_jsonrpc_wrapper_base:latest AS build
 
 WORKDIR /
 
-RUN apk update && apk add --no-cache git curl openssh-client gcc g++ musl-dev 
-RUN apk add make linux-headers
 
 RUN mkdir -p /src
 
@@ -22,7 +20,7 @@ RUN apk update \
 RUN mkdir -p /3rd/bsc
 
 COPY --from=build               /src/go-jsonrpc-wrapper / 
-COPY --from=build               /3rd/bsc/build/bin/     /3rd/bsc/
+#COPY --from=build               /3rd/bsc/build/bin/     /3rd/bsc/
 COPY config/config.json        /config/config.json 
 COPY config/route.json        /config/route.json 
 COPY abi_file/                  /abi_file
