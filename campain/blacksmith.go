@@ -2,6 +2,8 @@ package campain
 
 import (
 	"fmt"
+
+	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
 )
 
 //MARK:JsonRpcBlackSmith
@@ -70,16 +72,17 @@ func (blacksmith *EthContractBlackSmith) Make() interface{} {
 	return tool
 }
 
-type ExportPubsubBlackSmith struct {
-	Campain    *Campain
+type ExportBlackSmith struct {
 	ExportName string
 }
 
 //Make make tool
-func (blacksmith *ExportPubsubBlackSmith) Make() interface{} {
+func (blacksmith *ExportBlackSmith) Make() interface{} {
 
-	if hub, ok := blacksmith.Campain.pubsubHub[blacksmith.ExportName]; ok {
-		tool, err := NewExportPubSubTool(hub)
+	ex := export.GetExport(blacksmith.ExportName)
+	if ex != nil {
+
+		tool, err := NewExportTool(ex)
 		if err != nil {
 			fmt.Println(err)
 			return nil

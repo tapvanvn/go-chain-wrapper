@@ -104,9 +104,9 @@ func NewPubsubTask(tool string, topic string, message interface{}) *PubsubTask {
 
 func (task *PubsubTask) Process(tool interface{}) {
 
-	if tool1, ok := tool.(*ToolExportPubSub); ok {
+	if tool1, ok := tool.(*ToolExport); ok {
 
-		tool1.AddMessage(task.topic, task.message)
+		tool1.Export(task.topic, task.message)
 
 	} else {
 		fmt.Println("not tool", task.ToolLabel())

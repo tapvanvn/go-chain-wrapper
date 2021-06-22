@@ -6,10 +6,10 @@ type Chain struct {
 	Endpoints []string   `json:"endpoints"`
 	Tracking  []Track    `json:"tracking"`
 	Contracts []Contract `json:"contracts"`
-	Exports   []Export   `json:"exports"`
 }
 type Config struct {
-	Chains []Chain `json:"chains"`
+	Exports []Export `json:"exports,omitempty"`
+	Chains  []Chain  `json:"chains,omitempty"`
 }
 
 func (config *Config) GetNumWorker() int {

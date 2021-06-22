@@ -1,17 +1,17 @@
 {
+    "exports":[
+        {
+            "name":"rpi-cluster",
+            "type":"wspubsub",
+            "connection_string":"ws://ws-pubsub.default.svc.cluster.local/ws"
+        }
+    ],
     "chains": [
         {
             "name":"bsc",
             "num_worker":1,
             "endpoints":[
                 "https://bsc-dataseed.binance.org"
-            ],
-            "exports":[
-                {
-                    "name":"rpi-cluster",
-                    "type":"wspubsub",
-                    "connection_string":"ws://192.168.1.8:80/ws"
-                }
             ],
             "tracking":[
                 {
