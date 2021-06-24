@@ -216,6 +216,7 @@ func main() {
 
 		godashboard.AddDashboard(&db)
 	}
+	utility.Schedule(reportLive, time.Second*5)
 	//MARK: init router
 	jsonFile, err := os.Open(rootPath + "/config/route.json")
 
@@ -244,8 +245,6 @@ func main() {
 	http.Handle("/v1/", router)
 
 	fmt.Println("listen on port", port)
-
-	utility.Schedule(reportLive, time.Second*5)
 
 	/*for i := 0; i < 2; i++ {
 		cmd := &command.CmdGetLatestBlockNumber{}
