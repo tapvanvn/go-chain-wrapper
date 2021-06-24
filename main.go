@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/campain"
+	"github.com/tapvanvn/go-jsonrpc-wrapper/dashboard"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/form"
@@ -166,6 +168,10 @@ func initWorker() {
 	}
 }
 
+func reportLive() {
+	signal := &entity.Signal{ItemName: "chaininter." + system.NodeName}
+	dashboard.Report(signal)
+}
 func main() {
 
 	var port = utility.MustGetEnv("PORT")
@@ -175,6 +181,7 @@ func main() {
 	if configFile == "" {
 		configFile = "config.json"
 	}
+	system.NodeName = utility.GenVerifyCode(5)
 	//MARK: init system config
 	jsonFile2, err := os.Open(rootPath + "/config/" + configFile)
 
@@ -203,6 +210,11 @@ func main() {
 	}
 
 	go initWorker()
+
+	for _, db := range system.Config.Dashboards {
+
+		dashboard.AddDashboard(&db)
+	}
 	//MARK: init router
 	jsonFile, err := os.Open(rootPath + "/config/route.json")
 
@@ -231,6 +243,8 @@ func main() {
 	http.Handle("/v1/", router)
 
 	fmt.Println("listen on port", port)
+
+	utility.Schedule(reportLive, time.Second*5)
 
 	/*for i := 0; i < 2; i++ {
 		cmd := &command.CmdGetLatestBlockNumber{}

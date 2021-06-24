@@ -8,8 +8,9 @@ type Chain struct {
 	Contracts []Contract `json:"contracts"`
 }
 type Config struct {
-	Exports []Export `json:"exports,omitempty"`
-	Chains  []Chain  `json:"chains,omitempty"`
+	Dashboards []Dashboard `json:"dashboards, omitempty"`
+	Exports    []Export    `json:"exports,omitempty"`
+	Chains     []Chain     `json:"chains,omitempty"`
 }
 
 func (config *Config) GetNumWorker() int {

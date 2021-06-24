@@ -1,4 +1,10 @@
 {
+    "dashboard":[
+        {
+            "type":"wspubsub",
+            "connection_string":"ws://ws-pubsub.default.svc.cluster.local/ws"
+        }
+    ],
     "exports":[
         {
             "name":"rpi-cluster",
