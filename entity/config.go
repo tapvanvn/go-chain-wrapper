@@ -1,5 +1,7 @@
 package entity
 
+import "github.com/tapvanvn/godashboard"
+
 type Chain struct {
 	Name      string     `json:"name"`
 	NumWorker int        `json:"num_worker"`
@@ -8,9 +10,9 @@ type Chain struct {
 	Contracts []Contract `json:"contracts"`
 }
 type Config struct {
-	Dashboards []Dashboard `json:"dashboards, omitempty"`
-	Exports    []Export    `json:"exports,omitempty"`
-	Chains     []Chain     `json:"chains,omitempty"`
+	Dashboards []godashboard.Dashboard `json:"dashboards, omitempty"`
+	Exports    []Export                `json:"exports,omitempty"`
+	Chains     []Chain                 `json:"chains,omitempty"`
 }
 
 func (config *Config) GetNumWorker() int {

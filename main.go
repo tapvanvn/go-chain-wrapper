@@ -12,7 +12,8 @@ import (
 	"time"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/campain"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/dashboard"
+	"github.com/tapvanvn/godashboard"
+
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/form"
@@ -169,8 +170,8 @@ func initWorker() {
 }
 
 func reportLive() {
-	signal := &entity.Signal{ItemName: "chaininter." + system.NodeName}
-	dashboard.Report(signal)
+	signal := &godashboard.Signal{ItemName: "chaininter." + system.NodeName}
+	godashboard.Report(signal)
 }
 func main() {
 
@@ -213,7 +214,7 @@ func main() {
 
 	for _, db := range system.Config.Dashboards {
 
-		dashboard.AddDashboard(&db)
+		godashboard.AddDashboard(&db)
 	}
 	//MARK: init router
 	jsonFile, err := os.Open(rootPath + "/config/route.json")
