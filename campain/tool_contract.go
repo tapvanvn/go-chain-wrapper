@@ -37,12 +37,12 @@ func NewContractTool(campain *Campain, contractName string, backendURL string) (
 	return tool, nil
 }
 
-func (tool *ContractTool) Process(call *ContractCall) {
+func (tool *ContractTool) Process(call *ContractCall) error {
 
 	var outs []interface{}
 	var err error = nil
 
-	fmt.Println("do contract:", call.FuncName)
+	//fmt.Println("do contract:", call.FuncName)
 
 	if call.Params == nil || len(call.Params) == 0 {
 
@@ -50,31 +50,32 @@ func (tool *ContractTool) Process(call *ContractCall) {
 	} else {
 		err = tool.contract.Call(&outs, call.FuncName, call.Params...)
 	}
-	fmt.Println("result", outs)
+	//fmt.Println("result", outs)
 	if err != nil {
 
 		fmt.Println("contract error", err)
-
-	} else {
-
-		results := [][]byte{}
-		inputs := [][]byte{}
-		for _, param := range call.Params {
-			inputData, _ := json.Marshal(param)
-			inputs = append(inputs, inputData)
-		}
-		for _, out := range outs {
-			outData, _ := json.Marshal(out)
-			results = append(results, outData)
-		}
-		call.Out = &results
-		call.Input = &inputs
-
-		fmt.Println("call", call)
-
-		if call.ReportName != "" && call.Topic != "" {
-
-			tool.campain.Report(call.ReportName, call.Topic, call)
-		}
+		return err
 	}
+
+	results := [][]byte{}
+	inputs := [][]byte{}
+	for _, param := range call.Params {
+		inputData, _ := json.Marshal(param)
+		inputs = append(inputs, inputData)
+	}
+	for _, out := range outs {
+		outData, _ := json.Marshal(out)
+		results = append(results, outData)
+	}
+	call.Out = &results
+	call.Input = &inputs
+
+	//fmt.Println("call", call)
+
+	if call.ReportName != "" && call.Topic != "" {
+
+		tool.campain.Report(call.ReportName, call.Topic, call)
+	}
+	return nil
+
 }

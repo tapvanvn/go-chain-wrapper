@@ -3,7 +3,6 @@ package campain
 import (
 	"context"
 	"strconv"
-	"strings"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 	"github.com/tapvanvn/go-kaiclient/kardia"
@@ -66,8 +65,8 @@ func (tool *KaiClientTool) GetBlockTransaction(blockNumber uint64) ([]*entity.Tr
 			GasPrice:         strconv.FormatUint(trans.GasPrice, 10),
 			Hash:             trans.Hash,
 			Input:            trans.InputData,
-			From:             strings.ToLower(trans.From),
-			To:               strings.ToLower(trans.To),
+			From:             trans.From,
+			To:               trans.To,
 			TransactionIndex: strconv.FormatUint(uint64(trans.TransactionIndex), 10),
 		}
 		result = append(result, entityTrans)

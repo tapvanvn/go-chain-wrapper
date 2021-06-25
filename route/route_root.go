@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/campain"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/form"
@@ -56,21 +57,49 @@ func callContract(context *gorouter.RouteContext) {
 	for _, param := range frm.Params {
 		if param.Type == "uint256" {
 			input := &big.Int{}
-			err := json.Unmarshal(param.Value, input)
-			if err != nil {
-				fmt.Println("parse param error", err)
-				response.BadRequest(context, 0, err.Error(), nil)
+			num, ok := input.SetString(string(param.Value), 10)
+			if !ok {
+				fmt.Println("parse param error")
+				response.BadRequest(context, 0, "cannot parse:"+param.Value, nil)
 				return
 			}
+			input = num
 			inputs = append(inputs, input)
 		}
 	}
+	var call *campain.ContractCall = campain.CreateContractCall(frm.Name, inputs, frm.ReportName, frm.Topic)
+	if _, ok := context.R.Header["Direct"]; ok {
+		parts := strings.Split(frm.ChainName, ".")
+		if len(parts) != 2 {
+			response.BadRequest(context, 0, err.Error(), nil)
+			return
+		}
+		camp := campain.GetCampain(parts[0])
+		if camp == nil {
+			fmt.Println("cam not found", parts)
+			response.NotFound(context)
+			return
+		}
+		if tool, ok := camp.DirectContractTool[parts[1]]; ok {
 
-	call := campain.CreateContractCall(frm.Name, inputs, frm.ReportName, frm.Topic)
-	fmt.Println("call:", call)
-	//TODO: check if chain name is valid
-	task := campain.NewContractTask(frm.ChainName, call)
-	go goworker.AddTask(task)
+			err := tool.Process(call)
+			if err != nil {
+				response.BadRequest(context, 0, err.Error(), nil)
+				return
+			}
+			response.Success(context, call)
+			return
+		} else {
+			fmt.Println("tool not found", parts, camp.DirectContractTool)
+		}
+
+	} else {
+		fmt.Println(context.R.Header)
+		//TODO: check if chain name is valid
+		task := campain.NewContractTask(frm.ChainName, call)
+		go goworker.AddTask(task)
+		response.Success(context, "planed")
+	}
 }
 
 func callBlockSync(context *gorouter.RouteContext) {
@@ -88,9 +117,9 @@ func callBlockSync(context *gorouter.RouteContext) {
 	blockNumber := &big.Int{}
 
 	if frm.BlockNum.Type == "uint256" {
-
-		err := json.Unmarshal(frm.BlockNum.Value, blockNumber)
-		if err != nil {
+		num, ok := blockNumber.SetString(string(frm.BlockNum.Value), 10)
+		blockNumber = num
+		if !ok {
 			fmt.Println("parse param error", err)
 			response.BadRequest(context, 0, err.Error(), nil)
 			return

@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/filter"
 	"github.com/tapvanvn/goworker"
 )
@@ -21,17 +22,18 @@ func GetCampain(chainName string) *Campain {
 
 type Campain struct {
 	mux sync.Mutex
-	//timeRange       time.Duration
-	isRun           bool
-	chainName       string
-	ChnTransactions chan entity.Transaction
-	ChnBlockNumber  chan uint64
-	filters         map[filter.IFilter]*entity.Track
-	lastBlockNumber uint64
-	abis            map[string]IABI
-	contractAddress map[string]string
-	exportType      map[string]string
-	//pubsubHub       map[string]gopubsubengine.Hub
+
+	isRun              bool
+	chainName          string
+	ChnTransactions    chan entity.Transaction
+	ChnBlockNumber     chan uint64
+	Endpoints          []string
+	filters            map[filter.IFilter]*entity.Track
+	lastBlockNumber    uint64
+	abis               map[string]IABI
+	contractAddress    map[string]string
+	exportType         map[string]string
+	DirectContractTool map[string]*ContractTool
 }
 
 func AddCampain(chain string) *Campain {
@@ -41,17 +43,17 @@ func AddCampain(chain string) *Campain {
 		return camp
 	}
 	camp = &Campain{
-		//timeRange:       timeRange,
-		isRun:           false,
-		chainName:       chain,
-		ChnTransactions: make(chan entity.Transaction),
-		ChnBlockNumber:  make(chan uint64),
-		filters:         make(map[filter.IFilter]*entity.Track),
-		lastBlockNumber: 0,
-		abis:            map[string]IABI{},
-		contractAddress: map[string]string{},
-		exportType:      map[string]string{},
-		//pubsubHub:       make(map[string]gopubsubengine.Hub),
+		isRun:              false,
+		chainName:          chain,
+		ChnTransactions:    make(chan entity.Transaction),
+		ChnBlockNumber:     make(chan uint64),
+		filters:            make(map[filter.IFilter]*entity.Track),
+		Endpoints:          make([]string, 0),
+		lastBlockNumber:    0,
+		abis:               map[string]IABI{},
+		contractAddress:    map[string]string{},
+		exportType:         map[string]string{},
+		DirectContractTool: map[string]*ContractTool{},
 	}
 	__campmap[chain] = camp
 
@@ -59,6 +61,7 @@ func AddCampain(chain string) *Campain {
 }
 
 func (campain *Campain) LoadContract(contract *entity.Contract) error {
+
 	if contract.AbiName != "" {
 		if campain.chainName == "bsc" {
 			abiObj, err := NewEthereumABI(contract.AbiName, contract.Address)
@@ -69,6 +72,7 @@ func (campain *Campain) LoadContract(contract *entity.Contract) error {
 				abiObj.Info()
 				campain.abis[contract.Name] = abiObj
 				campain.contractAddress[contract.Name] = contract.Address
+
 			}
 		} else if campain.chainName == "kai" {
 			abiObj, err := NewKaiABI(contract.AbiName, contract.Address)
@@ -80,6 +84,13 @@ func (campain *Campain) LoadContract(contract *entity.Contract) error {
 				campain.abis[contract.Name] = abiObj
 				campain.contractAddress[contract.Name] = contract.Address
 			}
+		}
+
+		contractTool, err := NewContractTool(campain, contract.Name, campain.Endpoints[0])
+		if err == nil {
+			campain.DirectContractTool[contract.Name] = contractTool
+		} else {
+			fmt.Println("", err)
 		}
 	}
 	return nil
@@ -114,21 +125,22 @@ func (campain *Campain) Tracking(track entity.Track) error {
 }
 
 func (campain *Campain) Report(reportName string, topic string, message interface{}) {
-	exportType, ok := campain.exportType[reportName]
-	if !ok || exportType != "wspubsub" {
+	exporter := export.GetExport(reportName)
+	if exporter == nil {
+		fmt.Println("report not found", reportName, topic)
 		return
 	}
-	toolName := reportName
-	go goworker.AddTask(NewPubsubTask(toolName, topic, message))
+	go exporter.Export(topic, message)
+
 }
 
 func (campain *Campain) report(report *entity.Report, message interface{}) {
-	exportType, ok := campain.exportType[report.Name]
-	if !ok || exportType != "wspubsub" {
+	exporter := export.GetExport(report.Name)
+	if exporter == nil {
+		fmt.Println("report not found", report.Name, report.Topic)
 		return
 	}
-	toolName := report.Name
-	go goworker.AddTask(NewPubsubTask(toolName, report.Topic, message))
+	go exporter.Export(report.Topic, message)
 }
 
 func (campain *Campain) processBlockNumber() {

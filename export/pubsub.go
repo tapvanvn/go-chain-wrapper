@@ -18,18 +18,22 @@ func NewPubsubExporter(endpointAddress string) (*PubsubExporter, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &PubsubExporter{hub: hub}, nil
+	return &PubsubExporter{hub: hub,
+		publisher:  make(map[string]gopubsubengine.Publisher),
+		subscriber: map[string]gopubsubengine.Subscriber{},
+	}, nil
 }
 
 func (ex *PubsubExporter) Export(topic string, message interface{}) {
 
 	publisher, ok := ex.publisher[topic]
 	if !ok {
-		publisher, err := ex.hub.PublishOn(topic)
+		publisher2, err := ex.hub.PublishOn(topic)
 		if err != nil {
 			return
 		}
-		ex.publisher[topic] = publisher
+		ex.publisher[topic] = publisher2
+		publisher = publisher2
 	}
 	publisher.Publish(message)
 }

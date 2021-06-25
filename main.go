@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -45,18 +46,20 @@ func OnContractCall(message string) {
 	for _, param := range frm.Params {
 		if param.Type == "uint256" {
 			input := &big.Int{}
-			err := json.Unmarshal(param.Value, input)
-			if err != nil {
+			num, ok := input.SetString(string(param.Value), 10)
+
+			if !ok {
 				fmt.Println("parse param error", err)
 
 				return
 			}
+			input = num
 			inputs = append(inputs, input)
 		}
 	}
 
 	call := campain.CreateContractCall(frm.Name, inputs, frm.ReportName, frm.Topic)
-	fmt.Println("call:", call)
+	//fmt.Println("call:", call)
 	//TODO: check if chain name is valid
 	task := campain.NewContractTask(frm.ChainName, call)
 	go goworker.AddTask(task)
@@ -77,13 +80,14 @@ func OnSyncBlockCall(message string) {
 	blockNumber := &big.Int{}
 
 	if frm.BlockNum.Type == "uint256" {
+		num, ok := blockNumber.SetString(string(frm.BlockNum.Value), 10)
 
-		err := json.Unmarshal(frm.BlockNum.Value, blockNumber)
-		if err != nil {
+		if !ok {
 			fmt.Println("parse param error", err)
 
 			return
 		}
+		blockNumber = num
 	} else {
 
 		return
@@ -136,6 +140,10 @@ func initWorker() {
 		fmt.Println("add tool for chain ", chain.Name)
 
 		camp := campain.AddCampain(chain.Name)
+		if len(chain.Endpoints) == 0 {
+			panic(errors.New("chain must has atleast 1 endpoint"))
+		}
+		camp.Endpoints = append(camp.Endpoints, chain.Endpoints...)
 
 		for _, contract := range chain.Contracts {
 			err := camp.LoadContract(&contract)
@@ -143,6 +151,7 @@ func initWorker() {
 				fmt.Println(err.Error())
 				panic(err)
 			}
+
 			if chain.Name == "bsc" || chain.Name == "kai" {
 				fmt.Println("create ethcontract blacksmith", chain.Name+"."+contract.Name, chain.NumWorker)
 				goworker.AddToolWithControl(chain.Name+"."+contract.Name, &campain.EthContractBlackSmith{
