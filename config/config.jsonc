@@ -1,17 +1,24 @@
 {
+    "dashboards":[
+        {
+            "type":"wspubsub",
+            "connection_string":"ws:/\/ws-pubsub.default.svc.cluster.local/ws"
+        }
+    ],
     "exports":[
         {
             "name":"rpi-cluster",
             "type":"wspubsub",
-            "connection_string":"ws://192.168.1.3/ws"
+            "connection_string":"ws:/\/ws-pubsub.default.svc.cluster.local/ws"
         }
     ],
     "chains": [
         {
             "name":"bsc",
             "num_worker":2,
+            "auto_mine": false,
             "endpoints":[
-                "https://bsc-dataseed.binance.org"
+                "https:/\/bsc-dataseed.binance.org"
             ],
             "tracking":[
                 {
@@ -55,7 +62,7 @@
             "name":"kai",
             "num_worker":2,
             "endpoints":[
-                "https://rpc.kardiachain.io"
+                "https:/\/rpc.kardiachain.io"
             ],
             "tracking":[
                 {

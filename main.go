@@ -14,6 +14,9 @@ import (
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/campain"
 	"github.com/tapvanvn/godashboard"
+	engines "github.com/tapvanvn/godbengine"
+	"github.com/tapvanvn/godbengine/engine"
+	"github.com/tapvanvn/godbengine/engine/adapter"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
@@ -103,6 +106,23 @@ func OnSyncBlockCall(message string) {
 	go goworker.AddTask(task)
 }
 
+//Start start engine
+func StartEngine(engine *engine.Engine) {
+
+	//read redis define from env
+	redisConnectString := utility.MustGetEnv("CONNECT_STRING_REDIS")
+	fmt.Println("redis:", redisConnectString)
+	redisPool := adapter.RedisPool{}
+
+	err := redisPool.Init(redisConnectString)
+
+	if err != nil {
+
+		fmt.Println("cannot init redis")
+	}
+
+	engine.Init(&redisPool, nil, nil)
+}
 func initWorker() {
 	//GetNumWorker
 	numWorker := system.Config.GetNumWorker()
@@ -139,7 +159,7 @@ func initWorker() {
 	for _, chain := range system.Config.Chains {
 		fmt.Println("add tool for chain ", chain.Name)
 
-		camp := campain.AddCampain(chain.Name)
+		camp := campain.AddCampain(&chain)
 		if len(chain.Endpoints) == 0 {
 			panic(errors.New("chain must has atleast 1 endpoint"))
 		}
@@ -153,7 +173,6 @@ func initWorker() {
 			}
 
 			if chain.Name == "bsc" || chain.Name == "kai" {
-				fmt.Println("create ethcontract blacksmith", chain.Name+"."+contract.Name, chain.NumWorker)
 				goworker.AddToolWithControl(chain.Name+"."+contract.Name, &campain.EthContractBlackSmith{
 					Campain:      camp,
 					ContractName: contract.Name,
@@ -161,35 +180,38 @@ func initWorker() {
 				}, chain.NumWorker)
 			}
 		}
-
 		for _, track := range chain.Tracking {
 
 			camp.Tracking(track)
 		}
 
 		if chain.Name == "bsc" || chain.Name == "kai" {
+
 			goworker.AddToolWithControl(chain.Name, &campain.ClientBlackSmith{
 				Campain:     camp,
 				BackendURLS: chain.Endpoints,
 			}, chain.NumWorker)
-
 		}
 		camp.Run()
 	}
 }
 
 func reportLive() {
-	signal := &godashboard.Signal{ItemName: "chaininter." + system.NodeName}
+	signal := &godashboard.Signal{ItemName: "chaininter." + system.NodeName,
+		Params: campain.ReportLive(),
+	}
 	godashboard.Report(signal)
 }
 func main() {
+	engines.InitEngineFunc = StartEngine
+	_ = engines.GetEngine()
 
 	var port = utility.MustGetEnv("PORT")
 	rootPath, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	system.RootPath = rootPath
 	configFile := utility.GetEnv("CONFIG")
 	if configFile == "" {
-		configFile = "config.json"
+		configFile = "config.jsonc"
 	}
 	system.NodeName = utility.GenVerifyCode(5)
 	//MARK: init system config
@@ -202,6 +224,7 @@ func main() {
 
 	defer jsonFile2.Close()
 	bytes, err := ioutil.ReadAll(jsonFile2)
+	bytes = utility.TripComment(bytes)
 	systemConfig := entity.Config{}
 
 	if err != nil {
@@ -227,7 +250,7 @@ func main() {
 	}
 	utility.Schedule(reportLive, time.Second*5)
 	//MARK: init router
-	jsonFile, err := os.Open(rootPath + "/config/route.json")
+	jsonFile, err := os.Open(rootPath + "/config/route.jsonc")
 
 	if err != nil {
 
@@ -237,6 +260,7 @@ func main() {
 	defer jsonFile.Close()
 
 	bytes, _ = ioutil.ReadAll(jsonFile)
+	bytes = utility.TripComment(bytes)
 	var handers = map[string]gorouter.EndpointDefine{
 
 		"":         {Handles: Handles{route.Root}},

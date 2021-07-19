@@ -3,11 +3,16 @@ package campain
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/filter"
+	"github.com/tapvanvn/go-jsonrpc-wrapper/repository"
+	"github.com/tapvanvn/go-jsonrpc-wrapper/utility"
+	"github.com/tapvanvn/godashboard"
 	"github.com/tapvanvn/goworker"
 )
 
@@ -24,42 +29,67 @@ type Campain struct {
 	mux sync.Mutex
 
 	isRun              bool
+	IsAutoMine         bool
 	chainName          string
 	ChnTransactions    chan entity.Transaction
 	ChnBlockNumber     chan uint64
 	Endpoints          []string
 	filters            map[filter.IFilter]*entity.Track
 	lastBlockNumber    uint64
+	miningBlockNumber  uint64
 	abis               map[string]IABI
 	contractAddress    map[string]string
 	exportType         map[string]string
 	DirectContractTool map[string]*ContractTool
 }
 
-func AddCampain(chain string) *Campain {
+func AddCampain(chain *entity.Chain) *Campain {
 
-	camp := GetCampain(chain)
+	camp := GetCampain(chain.Name)
 	if camp != nil {
 		return camp
 	}
 	camp = &Campain{
 		isRun:              false,
-		chainName:          chain,
+		chainName:          chain.Name,
+		IsAutoMine:         chain.AutoMine,
 		ChnTransactions:    make(chan entity.Transaction),
 		ChnBlockNumber:     make(chan uint64),
 		filters:            make(map[filter.IFilter]*entity.Track),
 		Endpoints:          make([]string, 0),
-		lastBlockNumber:    0,
+		lastBlockNumber:    chain.MineFromBlock,
+		miningBlockNumber:  0,
 		abis:               map[string]IABI{},
 		contractAddress:    map[string]string{},
 		exportType:         map[string]string{},
 		DirectContractTool: map[string]*ContractTool{},
 	}
-	__campmap[chain] = camp
+	__campmap[chain.Name] = camp
 
 	return camp
 }
+func ReportLive() map[string]godashboard.Param {
+	report := map[string]godashboard.Param{}
+	for _, camp := range __campmap {
+		report[fmt.Sprintf("%s_lastest", camp.chainName)] = godashboard.Param{
+			Type:  "uint64",
+			Value: []byte(fmt.Sprintf("%d", camp.lastBlockNumber)),
+		}
+		repository.PutLastBlock(camp.chainName, camp.lastBlockNumber)
+	}
+	return report
+}
 
+//this function will be schedule if auto run config set to true
+func (campain *Campain) MineBlock() {
+
+	cmd := &CmdGetLatestBlockNumber{}
+	cmd.Init()
+	task := NewClientTask(campain.chainName, cmd)
+	goworker.AddTask(task)
+}
+
+//LoadContract load a contract
 func (campain *Campain) LoadContract(contract *entity.Contract) error {
 
 	if contract.AbiName != "" {
@@ -96,9 +126,11 @@ func (campain *Campain) LoadContract(contract *entity.Contract) error {
 	return nil
 }
 
+//Tracking tracking transaction
 func (campain *Campain) Tracking(track entity.Track) error {
 
 	campain.mux.Lock()
+	defer campain.mux.Unlock()
 	for _, subject := range track.Subjects {
 
 		if subject == "transaction.to" {
@@ -120,7 +152,6 @@ func (campain *Campain) Tracking(track entity.Track) error {
 		}
 	}
 
-	campain.mux.Unlock()
 	return nil
 }
 
@@ -149,19 +180,22 @@ func (campain *Campain) processBlockNumber() {
 		if blockNumber <= campain.lastBlockNumber {
 			continue
 		}
-		if campain.lastBlockNumber == 0 {
 
-			campain.lastBlockNumber = blockNumber
-		}
-		for i := campain.lastBlockNumber + 1; i <= blockNumber; i++ {
+		//we need to mine several block at a time
+		for i := campain.lastBlockNumber + 1; i <= campain.lastBlockNumber+100; i++ {
+			if i > blockNumber {
+				break
+			}
+			if i < campain.miningBlockNumber {
 
-			fmt.Println(campain.chainName, "block:", i)
+				continue
+			}
+			campain.miningBlockNumber = i
 			cmd := CreateCmdTransactionsOfBlock(i)
 			cmd.Init()
 			task := NewClientTask(campain.chainName, cmd)
 			go goworker.AddTask(task)
 		}
-		campain.lastBlockNumber = blockNumber
 	}
 }
 
@@ -197,6 +231,14 @@ func (campain *Campain) processTransaction() {
 			}
 		}
 
+		if transBlock, err := strconv.ParseUint(trans.BlockNumber, 10, 64); err == nil {
+			if transBlock > campain.lastBlockNumber {
+				campain.lastBlockNumber = transBlock
+			}
+		} else {
+			fmt.Println(err)
+		}
+
 		campain.mux.Unlock()
 	}
 }
@@ -210,13 +252,21 @@ func (campain *Campain) run() {
 }
 
 func (campain *Campain) Run() {
-
 	if campain.isRun {
 
 		return
 	}
+	//only fetch cache if we not set the init value
+	if campain.lastBlockNumber == 0 {
+		campain.lastBlockNumber = repository.GetLastBlock(campain.chainName)
+	}
+	if campain.IsAutoMine {
+		fmt.Println("auto mine")
+		utility.Schedule(campain.MineBlock, time.Second)
+	} else {
+		fmt.Println("not auto mine")
+	}
 	go campain.processBlockNumber()
 	go campain.processTransaction()
 	campain.isRun = true
-	//#utility.Schedule(campain.run, campain.timeRange)
 }

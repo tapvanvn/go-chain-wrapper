@@ -23,7 +23,7 @@ func (task *Task) Process(tool interface{}) {
 		tool1.AddCommand(task.command)
 
 	} else {
-		fmt.Println("not tool", task.ToolLabel())
+		fmt.Println("not tool1", task.ToolLabel())
 	}
 }
 
@@ -80,7 +80,7 @@ func (task *ContractTask) Process(tool interface{}) {
 		tool1.Process(task.call)
 
 	} else {
-		fmt.Println("not tool", task.ToolLabel())
+		fmt.Println("not tool2", task.ToolLabel())
 	}
 }
 
@@ -109,7 +109,7 @@ func (task *PubsubTask) Process(tool interface{}) {
 		tool1.Export(task.topic, task.message)
 
 	} else {
-		fmt.Println("not tool", task.ToolLabel())
+		fmt.Println("not tool3", task.ToolLabel())
 	}
 }
 

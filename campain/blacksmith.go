@@ -32,7 +32,7 @@ type ClientBlackSmith struct {
 
 //Make make tool
 func (blacksmith *ClientBlackSmith) Make() interface{} {
-	//fmt.Println("make tool", blacksmith.Campain.chainName)
+	fmt.Println("make tool", blacksmith.Campain.chainName)
 	//TODO: random backend
 	if blacksmith.Campain.chainName == "bsc" {
 		tool, err := NewEthClientTool(blacksmith.Campain, blacksmith.BackendURLS[0])

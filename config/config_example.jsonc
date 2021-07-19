@@ -2,22 +2,23 @@
     "dashboard":[
         {
             "type":"wspubsub",
-            "connection_string":"ws://ws-pubsub.default.svc.cluster.local/ws"
+            "connection_string":"ws:/\/ws-pubsub.default.svc.cluster.local/ws"
         }
     ],
     "exports":[
         {
             "name":"rpi-cluster",
             "type":"wspubsub",
-            "connection_string":"ws://ws-pubsub.default.svc.cluster.local/ws"
+            "connection_string":"ws:/\/ws-pubsub.default.svc.cluster.local/ws"
         }
     ],
     "chains": [
         {
             "name":"bsc",
             "num_worker":1,
+            "auto_run": false, //auto mine block
             "endpoints":[
-                "https://bsc-dataseed.binance.org"
+                "https:/\/bsc-dataseed.binance.org"
             ],
             "tracking":[
                 {

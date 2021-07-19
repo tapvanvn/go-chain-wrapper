@@ -31,7 +31,11 @@ spec:
           env:
             - name: PORT
               value: "{{ .Values.service.targetPort }}"
-              
+            - name: CONNECT_STRING_REDIS
+              valueFrom:
+                secretKeyRef:
+                  name: config
+                  key: CONNECT_STRING_REDIS
           ports:
             - name: {{ .Values.service.name }}
               containerPort: {{ .Values.service.targetPort }}

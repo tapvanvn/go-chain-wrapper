@@ -3,11 +3,13 @@ package entity
 import "github.com/tapvanvn/godashboard"
 
 type Chain struct {
-	Name      string     `json:"name"`
-	NumWorker int        `json:"num_worker"`
-	Endpoints []string   `json:"endpoints"`
-	Tracking  []Track    `json:"tracking"`
-	Contracts []Contract `json:"contracts"`
+	Name          string     `json:"name"`
+	NumWorker     int        `json:"num_worker"`
+	Endpoints     []string   `json:"endpoints"`
+	Tracking      []Track    `json:"tracking"`
+	Contracts     []Contract `json:"contracts"`
+	AutoMine      bool       `json:"auto_mine"`
+	MineFromBlock uint64     `json:"mine_from_block"`
 }
 type Config struct {
 	Dashboards []godashboard.Dashboard `json:"dashboards, omitempty"`
