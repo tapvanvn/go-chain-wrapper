@@ -256,9 +256,11 @@ func (campain *Campain) Run() {
 
 		return
 	}
+
+	cacheLastBlock := repository.GetLastBlock(campain.chainName)
 	//only fetch cache if we not set the init value
-	if campain.lastBlockNumber == 0 {
-		campain.lastBlockNumber = repository.GetLastBlock(campain.chainName)
+	if cacheLastBlock > campain.lastBlockNumber {
+		campain.lastBlockNumber = cacheLastBlock
 	}
 	if campain.IsAutoMine {
 		fmt.Println("auto mine")
