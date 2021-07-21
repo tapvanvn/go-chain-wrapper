@@ -25,6 +25,11 @@ func GetCampain(chainName string) *Campain {
 	return nil
 }
 
+type ReportEvent struct {
+	track  *entity.Track
+	events []*entity.Event
+}
+
 type Campain struct {
 	mux sync.Mutex
 
@@ -33,6 +38,7 @@ type Campain struct {
 	chainName          string
 	ChnTransactions    chan entity.Transaction
 	ChnBlockNumber     chan uint64
+	ChnEvent           chan *ReportEvent
 	Endpoints          []string
 	filters            map[filter.IFilter]*entity.Track
 	lastBlockNumber    uint64
@@ -55,6 +61,7 @@ func AddCampain(chain *entity.Chain) *Campain {
 		IsAutoMine:         chain.AutoMine,
 		ChnTransactions:    make(chan entity.Transaction),
 		ChnBlockNumber:     make(chan uint64),
+		ChnEvent:           make(chan *ReportEvent),
 		filters:            make(map[filter.IFilter]*entity.Track),
 		Endpoints:          make([]string, 0),
 		lastBlockNumber:    chain.MineFromBlock,
@@ -150,6 +157,13 @@ func (campain *Campain) Tracking(track entity.Track) error {
 		if exportType != "wspubsub" {
 			return errors.New("export is not supported")
 		}
+		for _, sub := range report.Subjects {
+			if sub == "transaction" {
+				report.ReportTransaction = true
+			} else if sub == "event" {
+				report.ReportEvent = true
+			}
+		}
 	}
 
 	return nil
@@ -202,12 +216,12 @@ func (campain *Campain) processBlockNumber() {
 func (campain *Campain) processTransaction() {
 	for {
 		trans := <-campain.ChnTransactions
-		campain.mux.Lock()
-		//isFilted := true
+
+		//fmt.Println("transaction ", len(campain.filters), trans.BlockNumber)
 		for filter, track := range campain.filters {
 			if filter.Match(&trans) {
 				event := map[string]interface{}{}
-				//isFilted = false
+
 				fmt.Println(campain.chainName, "found transaction:", trans.Hash)
 				fmt.Println("\tfrom:", trans.From)
 				fmt.Println("\tto:", trans.To)
@@ -215,18 +229,33 @@ func (campain *Campain) processTransaction() {
 				event["to"] = trans.To
 				event["hash"] = trans.Hash
 				if track.ContractName != "" {
+
 					if abiObj, ok := campain.abis[track.ContractName]; ok {
+
 						method, args, err := abiObj.GetMethod(trans.Input)
 						event["method"] = method
 						event["args"] = args
 						if err == nil {
 							fmt.Println("\tmethod:", method, args)
 						}
+
 					}
 				}
 				for _, report := range track.Reports {
+					if report.ReportTransaction {
+						campain.report(&report, event)
+					}
+				}
 
-					campain.report(&report, event)
+				if entity.AnyReportEvent(track.Reports) {
+					//TODO: add switch by config
+					task := TransactionTask{
+						tool:        campain.chainName + "." + track.ContractName + ".trans",
+						transaction: &trans,
+						track:       track,
+					}
+					fmt.Println("tool", task.tool)
+					go goworker.AddTask(&task)
 				}
 			}
 		}
@@ -238,8 +267,19 @@ func (campain *Campain) processTransaction() {
 		} else {
 			fmt.Println(err)
 		}
+	}
+}
 
-		campain.mux.Unlock()
+func (campain *Campain) processEvent() {
+	for {
+		reportEvent := <-campain.ChnEvent
+
+		for _, report := range reportEvent.track.Reports {
+
+			for _, event := range reportEvent.events {
+				campain.report(&report, event)
+			}
+		}
 	}
 }
 
@@ -270,5 +310,7 @@ func (campain *Campain) Run() {
 	}
 	go campain.processBlockNumber()
 	go campain.processTransaction()
+	go campain.processEvent()
+
 	campain.isRun = true
 }

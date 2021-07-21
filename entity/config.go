@@ -21,6 +21,7 @@ func (config *Config) GetNumWorker() int {
 	number := 0
 	for _, chain := range config.Chains {
 		number += chain.NumWorker
+		number += chain.NumWorker * len(chain.Contracts) * 2
 	}
 	number = number + 1
 	return number

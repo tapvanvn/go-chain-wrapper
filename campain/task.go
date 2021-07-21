@@ -2,6 +2,8 @@ package campain
 
 import (
 	"fmt"
+
+	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 )
 
 type Task struct {
@@ -57,6 +59,36 @@ func (task *ClientTask) Process(tool interface{}) {
 }
 
 func (task *ClientTask) ToolLabel() string {
+	return task.tool
+}
+
+//MARK: Transaction Task
+type TransactionTask struct {
+	tool        string
+	transaction *entity.Transaction
+	track       *entity.Track
+}
+
+func NewTransactionTask(tool string, command Command) *ClientTask {
+	return &ClientTask{
+		tool:    tool,
+		command: command,
+	}
+}
+
+func (task *TransactionTask) Process(tool interface{}) {
+
+	if tool1, ok := tool.(ITransactionTool); ok {
+
+		tool1.Parse(task.transaction, task.track)
+
+	} else {
+
+		fmt.Println("not tool for client task", task.ToolLabel(), tool)
+	}
+}
+
+func (task *TransactionTask) ToolLabel() string {
 	return task.tool
 }
 

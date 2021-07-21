@@ -63,6 +63,7 @@ func (cmd *CmdTransactionsOfBlock) GetResponseInterface() interface{} {
 }
 
 func (cmd *CmdTransactionsOfBlock) Done(campain *Campain) {
+	fmt.Println("done fine transaction for block", cmd.BlockNumber)
 	for _, trans := range cmd.Transactions {
 		campain.ChnTransactions <- *trans
 	}

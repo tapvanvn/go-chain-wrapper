@@ -173,6 +173,13 @@ func initWorker() {
 			}
 
 			if chain.Name == "bsc" || chain.Name == "kai" {
+				fmt.Println("tool1", chain.Name+"."+contract.Name+".trans")
+				goworker.AddToolWithControl(chain.Name+"."+contract.Name+".trans", &campain.TransactionBlackSmith{
+					Campain:      camp,
+					ContractName: contract.Name,
+					BackendURLS:  chain.Endpoints,
+				}, chain.NumWorker)
+
 				goworker.AddToolWithControl(chain.Name+"."+contract.Name, &campain.EthContractBlackSmith{
 					Campain:      camp,
 					ContractName: contract.Name,

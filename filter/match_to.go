@@ -1,6 +1,10 @@
 package filter
 
-import "github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+import (
+	"strings"
+
+	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+)
 
 type FilMatchTo struct {
 	Address string
@@ -8,5 +12,5 @@ type FilMatchTo struct {
 
 func (filter *FilMatchTo) Match(transaction *entity.Transaction) bool {
 
-	return transaction.To == filter.Address
+	return strings.ToLower(transaction.To) == strings.ToLower(filter.Address)
 }

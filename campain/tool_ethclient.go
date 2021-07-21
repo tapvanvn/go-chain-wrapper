@@ -2,11 +2,12 @@ package campain
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
 )
@@ -65,21 +66,32 @@ func (tool *EthClientTool) GetBlockTransaction(blockNumber uint64) ([]*entity.Tr
 			continue
 		}
 		to := trans.To()
+
 		toAddress := ""
 		if to != nil {
 			toAddress = to.Hex()
 		}
+
 		entityTrans := &entity.Transaction{BlockHash: trans.Hash().Hex(),
-			BlockNumber:      strconv.FormatUint(blockNumber, 10),
-			Gas:              strconv.FormatUint(trans.Gas(), 10),
-			GasPrice:         trans.GasPrice().String(),
-			Hash:             trans.Hash().Hex(),
-			Input:            base64.RawStdEncoding.EncodeToString(trans.Data()),
-			From:             "",
-			To:               toAddress,
-			TransactionIndex: strconv.FormatUint(uint64(i), 10),
+			BlockNumber:       strconv.FormatUint(blockNumber, 10),
+			Gas:               strconv.FormatUint(trans.Gas(), 10),
+			GasPrice:          trans.GasPrice().String(),
+			Hash:              trans.Hash().Hex(),
+			Input:             "0x" + hex.EncodeToString(trans.Data()),
+			From:              "",
+			To:                toAddress,
+			TransactionIndex:  strconv.FormatUint(uint64(i), 10),
+			Nonce:             fmt.Sprint(trans.Nonce()),
+			OriginTransaction: trans,
 		}
 		result = append(result, entityTrans)
 	}
 	return result, nil
+}
+
+func (tool *EthClientTool) GetTransactionReceipt(txHash []byte) {
+	txHashParsed := common.BytesToHash(txHash)
+	if recept, err := tool.backend.TransactionReceipt(context.TODO(), txHashParsed); err != nil {
+		fmt.Println(recept, err)
+	}
 }
