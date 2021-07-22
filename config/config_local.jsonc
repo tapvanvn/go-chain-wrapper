@@ -14,7 +14,7 @@
             "auto_mine": true,
             "mine_from_block": 9308902,
             "endpoints":[
-                "https:/\/purple-dawn-sound.bsc.quiknode.pro/91675f9d65d7c3ca5008fd0617264d7673fe2bf2/"
+                "https:/\/bsc-dataseed.binance.org"
             ],
             "tracking":[
                 {
