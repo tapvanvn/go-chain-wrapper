@@ -57,7 +57,9 @@ func (tool *EthClientTool) GetBlockTransaction(blockNumber uint64) ([]*entity.Tr
 	}
 	result := []*entity.Transaction{}
 	for i := uint(0); i < transCount; i++ {
+
 		trans, err := tool.backend.TransactionInBlock(ctx, hash, i)
+
 		if err != nil {
 			return nil, err
 		}
@@ -83,6 +85,9 @@ func (tool *EthClientTool) GetBlockTransaction(blockNumber uint64) ([]*entity.Tr
 			TransactionIndex:  strconv.FormatUint(uint64(i), 10),
 			Nonce:             fmt.Sprint(trans.Nonce()),
 			OriginTransaction: trans,
+		}
+		if sender, err2 := tool.backend.TransactionSender(ctx, trans, hash, i); err2 == nil {
+			entityTrans.From = sender.String()
 		}
 		result = append(result, entityTrans)
 	}

@@ -1,5 +1,4 @@
 {
-    
     "exports":[
         {
             "name":"rpi-cluster",
@@ -8,7 +7,7 @@
         }
     ],
     "chains": [
-        {
+        /*{
             "name":"bsc",
             "num_worker":10,
             "auto_mine": true,
@@ -52,6 +51,39 @@
                 {
                     "name":"gen",
                     "address":"0x0a75ACA514e65c073D385a65563382d27C9914bA",
+                    "abi":"pet_sol_GeneScience.abi"
+                }
+            ]
+        }*/
+        {
+            "name":"kai",
+            "auto_mine": true,
+            "num_worker":2,
+            "mine_from_block": 3303389,
+            "endpoints":[
+                "https:/\/rpc.kardiachain.io"
+            ],
+            "tracking":[
+                {
+                    "address":"0xc80ace0ac969397f96a8e1c97d21b4759fafeb1e",
+                    "subjects":["transaction.to"],
+                    "contract":"pet",
+                    "reports":[ {
+                        "name":"rpi-cluster",
+                        "topic":"kai.pet_event",
+                        "subjects":["event"]
+                    }]
+                }
+            ],
+            "contracts":[
+                {
+                    "name":"pet",
+                    "address":"0xc80ace0ac969397f96a8e1c97d21b4759fafeb1e",
+                    "abi":"pet_sol_PetCore.abi"
+                },
+                {
+                    "name":"gen",
+                    "address":"0x5dA347662972c0ECE8cB0BD4b8ee1c3D439e7898",
                     "abi":"pet_sol_GeneScience.abi"
                 }
             ]

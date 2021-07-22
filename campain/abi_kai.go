@@ -146,9 +146,6 @@ func (contract *KaiContract) Call(result *[]interface{}, method string, params .
 	return nil
 	//return contract.contract.Call(nil, result, method, params...)
 }
-func (contract *KaiContract) ParseLog(result map[string]interface{}, event string, log interface{}) error {
-	return nil
-}
 
 /*
 // Store is an auto generated Go binding around an Ethereum contract.

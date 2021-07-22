@@ -117,12 +117,6 @@ func (contract *EthContract) Call(result *[]interface{}, method string, params .
 
 	return contract.contract.Call(nil, result, method, params...)
 }
-func (contract *EthContract) ParseLog(result map[string]interface{}, event string, log interface{}) error {
-	if ethLog, ok := log.(*types.Log); ok {
-		return contract.contract.UnpackLogIntoMap(result, event, *ethLog)
-	}
-	return errors.New("cannot parse log")
-}
 
 // bindStore binds a generic wrapper to an already deployed contract.
 func (ethAbi *EthereumABI) bindContract(address common.Address,

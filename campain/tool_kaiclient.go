@@ -60,14 +60,15 @@ func (tool *KaiClientTool) GetBlockTransaction(blockNumber uint64) ([]*entity.Tr
 	for _, trans := range block.Txs {
 
 		entityTrans := &entity.Transaction{BlockHash: trans.BlockHash,
-			BlockNumber:      strconv.FormatUint(blockNumber, 10),
-			Gas:              strconv.FormatUint(trans.GasUsed, 10),
-			GasPrice:         strconv.FormatUint(trans.GasPrice, 10),
-			Hash:             trans.Hash,
-			Input:            trans.InputData,
-			From:             trans.From,
-			To:               trans.To,
-			TransactionIndex: strconv.FormatUint(uint64(trans.TransactionIndex), 10),
+			BlockNumber:       strconv.FormatUint(blockNumber, 10),
+			Gas:               strconv.FormatUint(trans.GasUsed, 10),
+			GasPrice:          strconv.FormatUint(trans.GasPrice, 10),
+			Hash:              trans.Hash,
+			Input:             trans.InputData,
+			From:              trans.From,
+			To:                trans.To,
+			TransactionIndex:  strconv.FormatUint(uint64(trans.TransactionIndex), 10),
+			OriginTransaction: trans,
 		}
 		result = append(result, entityTrans)
 	}
