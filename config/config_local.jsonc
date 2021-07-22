@@ -1,15 +1,10 @@
 {
-    "dashboards":[
-        {
-            "type":"wspubsub",
-            "connection_string":"ws:/\/192.168.1.3/ws"
-        }
-    ],
+    
     "exports":[
         {
             "name":"rpi-cluster",
             "type":"wspubsub",
-            "connection_string":"ws:/\/192.168.1.3/ws"
+            "connection_string":"ws:/\/localhost:9002/ws"
         }
     ],
     "chains": [

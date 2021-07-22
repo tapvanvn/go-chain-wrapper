@@ -67,6 +67,8 @@ func AddExport(export *entity.Export) error {
 			__exporttype[export.Name] = export.Type
 			__exportmap[export.Name] = ex
 
+		} else {
+			panic("cannot found pubsub")
 		}
 		return nil
 	}

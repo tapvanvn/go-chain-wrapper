@@ -1,7 +1,6 @@
 package campain
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -45,7 +44,6 @@ type Campain struct {
 	miningBlockNumber  uint64
 	abis               map[string]IABI
 	contractAddress    map[string]string
-	exportType         map[string]string
 	DirectContractTool map[string]*ContractTool
 }
 
@@ -68,7 +66,6 @@ func AddCampain(chain *entity.Chain) *Campain {
 		miningBlockNumber:  0,
 		abis:               map[string]IABI{},
 		contractAddress:    map[string]string{},
-		exportType:         map[string]string{},
 		DirectContractTool: map[string]*ContractTool{},
 	}
 	__campmap[chain.Name] = camp
@@ -149,14 +146,9 @@ func (campain *Campain) Tracking(track entity.Track) error {
 			campain.filters[filter] = &track
 		}
 	}
+
 	for _, report := range track.Reports {
-		exportType, ok := campain.exportType[report.Name]
-		if !ok {
-			return errors.New("export not loaded")
-		}
-		if exportType != "wspubsub" {
-			return errors.New("export is not supported")
-		}
+
 		for _, sub := range report.Subjects {
 			if sub == "transaction" {
 				report.ReportTransaction = true
@@ -241,9 +233,10 @@ func (campain *Campain) processTransaction() {
 
 					}
 				}
+				fmt.Println("")
 				for _, report := range track.Reports {
 					if report.ReportTransaction {
-						campain.report(&report, event)
+						campain.report(report, event)
 					}
 				}
 
@@ -254,7 +247,6 @@ func (campain *Campain) processTransaction() {
 						transaction: &trans,
 						track:       track,
 					}
-					fmt.Println("tool", task.tool)
 					go goworker.AddTask(&task)
 				}
 			}
@@ -277,7 +269,7 @@ func (campain *Campain) processEvent() {
 		for _, report := range reportEvent.track.Reports {
 
 			for _, event := range reportEvent.events {
-				campain.report(&report, event)
+				campain.report(report, event)
 			}
 		}
 	}

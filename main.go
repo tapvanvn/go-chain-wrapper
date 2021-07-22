@@ -134,6 +134,7 @@ func initWorker() {
 		if err != nil {
 			panic(err)
 		}
+		fmt.Println("export", ex)
 		goworker.AddToolWithControl(ex.Name,
 			&campain.ExportBlackSmith{
 				ExportName: ex.Name,
@@ -153,6 +154,8 @@ func initWorker() {
 					SyncBlockSubcriber[ex.Name] = subscriber
 				}
 			}
+		} else {
+			panic("not support export type")
 		}
 	}
 

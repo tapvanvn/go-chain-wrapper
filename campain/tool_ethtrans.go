@@ -2,9 +2,9 @@ package campain
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -71,20 +71,28 @@ func (tool *EthTransactionTool) Parse(transaction *entity.Transaction, track *en
 							if len(outs) > 0 {
 								evt := &entity.Event{
 									Name:      event.Name,
-									Arguments: make(map[string]entity.Param),
+									Arguments: make(map[string]string),
 								}
 								for _, args := range event.Inputs {
-									value, err := json.Marshal(outs[count])
+									argType := args.Type.String()
+									value := ""
+									if argType == "uint256" {
+
+										tryBig := outs[count].(*big.Int)
+										value = tryBig.String()
+
+									} else if argType == "address" {
+										value = outs[count].(common.Address).String()
+									} else {
+										value = "unsupported"
+									}
 									if err != nil {
 										break
 									}
-									evt.Arguments[args.Name] = entity.Param{
-										Type:  args.Type.String(),
-										Value: value,
-									}
+									evt.Arguments[args.Name] = fmt.Sprintf("%s.%s", args.Type.String(), value)
+									count++
 								}
-								fmt.Println("event", __count, evt)
-								count++
+
 								events = append(events, evt)
 							}
 						}
@@ -92,6 +100,7 @@ func (tool *EthTransactionTool) Parse(transaction *entity.Transaction, track *en
 				}
 			}
 			if len(events) > 0 {
+
 				report := &ReportEvent{
 					track:  track,
 					events: events,
