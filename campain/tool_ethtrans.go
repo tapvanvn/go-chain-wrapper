@@ -23,8 +23,8 @@ type EthTransactionTool struct {
 
 func NewEthTransactionTool(campain *Campain, backendURL string, abi *EthereumABI, contractName string) (*EthTransactionTool, error) {
 
-	__tool_id += 1
-	tool := &EthTransactionTool{id: __tool_id,
+	tool := &EthTransactionTool{
+		id:      newToolID(),
 		ready:   false,
 		campain: campain,
 		abi:     abi,
@@ -105,7 +105,7 @@ func (tool *EthTransactionTool) Parse(transaction *entity.Transaction, track *en
 					track:  track,
 					events: events,
 				}
-				tool.campain.ChnEvent <- report
+				tool.campain.chnEvent <- report
 			}
 		}
 	}

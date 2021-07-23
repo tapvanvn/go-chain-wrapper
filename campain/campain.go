@@ -11,8 +11,7 @@ import (
 	"github.com/tapvanvn/go-jsonrpc-wrapper/filter"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/repository"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/utility"
-	"github.com/tapvanvn/godashboard"
-	"github.com/tapvanvn/goworker"
+	goworker "github.com/tapvanvn/goworker/v2"
 )
 
 var __campmap map[string]*Campain = map[string]*Campain{}
@@ -24,27 +23,26 @@ func GetCampain(chainName string) *Campain {
 	return nil
 }
 
-type ReportEvent struct {
-	track  *entity.Track
-	events []*entity.Event
-}
-
+type Endpoint string
 type Campain struct {
 	mux sync.Mutex
 
 	isRun              bool
-	IsAutoMine         bool
+	isAutoMine         bool
 	chainName          string
-	ChnTransactions    chan entity.Transaction
-	ChnBlockNumber     chan uint64
-	ChnEvent           chan *ReportEvent
-	Endpoints          []string
+	chnTransactions    chan entity.Transaction
+	chnBlockNumber     chan uint64
+	chnEvent           chan *ReportEvent
+	endpoints          []Endpoint
 	filters            map[filter.IFilter]*entity.Track
 	lastBlockNumber    uint64
 	miningBlockNumber  uint64
 	abis               map[string]IABI
 	contractAddress    map[string]string
-	DirectContractTool map[string]*ContractTool
+	directContractTool map[string]*ContractTool
+	quantityControl    map[string]int
+	originEndpoint     map[string]Endpoint
+	workerLabels       []string
 }
 
 func AddCampain(chain *entity.Chain) *Campain {
@@ -56,32 +54,72 @@ func AddCampain(chain *entity.Chain) *Campain {
 	camp = &Campain{
 		isRun:              false,
 		chainName:          chain.Name,
-		IsAutoMine:         chain.AutoMine,
-		ChnTransactions:    make(chan entity.Transaction),
-		ChnBlockNumber:     make(chan uint64),
-		ChnEvent:           make(chan *ReportEvent),
+		isAutoMine:         chain.AutoMine,
+		chnTransactions:    make(chan entity.Transaction),
+		chnBlockNumber:     make(chan uint64),
+		chnEvent:           make(chan *ReportEvent),
 		filters:            make(map[filter.IFilter]*entity.Track),
-		Endpoints:          make([]string, 0),
+		endpoints:          make([]Endpoint, 0),
 		lastBlockNumber:    chain.MineFromBlock,
 		miningBlockNumber:  0,
 		abis:               map[string]IABI{},
 		contractAddress:    map[string]string{},
-		DirectContractTool: map[string]*ContractTool{},
+		directContractTool: map[string]*ContractTool{},
+		quantityControl:    map[string]int{},
+		originEndpoint:     map[string]Endpoint{},
+		workerLabels:       make([]string, 0),
 	}
 	__campmap[chain.Name] = camp
 
+	goworker.AddToolWithControl(chain.Name, &ClientBlackSmith{
+		Campain: camp,
+	}, chain.NumWorker)
+
+	camp.workerLabels = append(camp.workerLabels, chain.Name)
+
+	for origin, endpoint := range chain.Endpoints {
+
+		camp.AddEndpoint(origin, Endpoint(endpoint))
+	}
+
+	for _, contract := range chain.Contracts {
+		err := camp.LoadContract(&contract)
+		if err != nil {
+			fmt.Println(err.Error())
+			panic(err)
+		}
+
+		camp.SetupContractWorker(&contract, chain.NumWorker)
+	}
+
+	for _, track := range chain.Tracking {
+
+		camp.Tracking(track)
+	}
+
 	return camp
 }
-func ReportLive() map[string]godashboard.Param {
-	report := map[string]godashboard.Param{}
-	for _, camp := range __campmap {
-		report[fmt.Sprintf("%s_lastest", camp.chainName)] = godashboard.Param{
-			Type:  "uint64",
-			Value: []byte(fmt.Sprintf("%d", camp.lastBlockNumber)),
-		}
-		repository.PutLastBlock(camp.chainName, camp.lastBlockNumber)
+
+func (campain *Campain) AddEndpoint(origin string, endpoint Endpoint) {
+
+	if len(campain.originEndpoint) == 0 {
+		origin = "default"
 	}
-	return report
+	campain.originEndpoint[origin] = endpoint
+	campain.endpoints = append(campain.endpoints, endpoint)
+
+}
+
+func (campain *Campain) GetEndpoint(origin string) Endpoint {
+	if endpoint, ok := campain.originEndpoint[origin]; ok {
+		return endpoint
+	}
+	return ""
+}
+
+func (campain *Campain) EndpointQuantityReport(origin string, meta interface{}, failCount int) {
+	campain.quantityControl[origin] = failCount
+
 }
 
 //this function will be schedule if auto run config set to true
@@ -103,7 +141,7 @@ func (campain *Campain) LoadContract(contract *entity.Contract) error {
 
 				return err
 			} else {
-				abiObj.Info()
+				//abiObj.Info()
 				campain.abis[contract.Name] = abiObj
 				campain.contractAddress[contract.Name] = contract.Address
 
@@ -114,20 +152,40 @@ func (campain *Campain) LoadContract(contract *entity.Contract) error {
 
 				return err
 			} else {
-				abiObj.Info()
+				//abiObj.Info()
 				campain.abis[contract.Name] = abiObj
 				campain.contractAddress[contract.Name] = contract.Address
 			}
 		}
 
-		contractTool, err := NewContractTool(campain, contract.Name, campain.Endpoints[0])
+		contractTool, err := NewContractTool(campain, contract.Name, string(campain.endpoints[0]))
 		if err == nil {
-			campain.DirectContractTool[contract.Name] = contractTool
+			campain.directContractTool[contract.Name] = contractTool
 		} else {
 			fmt.Println("", err)
 		}
 	}
+
 	return nil
+}
+
+func (campain *Campain) SetupContractWorker(contract *entity.Contract, numWorker int) {
+
+	labelContract := fmt.Sprintf("%s.%s", campain.chainName, contract.Name)
+	labelTrans := fmt.Sprintf("%s.%s.trans", campain.chainName, contract.Name)
+
+	goworker.AddToolWithControl(labelContract, &ContractBlackSmith{
+		Campain:      campain,
+		ContractName: contract.Name,
+	}, numWorker)
+
+	goworker.AddToolWithControl(labelTrans, &TransactionBlackSmith{
+		Campain:      campain,
+		ContractName: contract.Name,
+	}, numWorker)
+
+	campain.workerLabels = append(campain.workerLabels, labelTrans)
+	campain.workerLabels = append(campain.workerLabels, labelContract)
 }
 
 //Tracking tracking transaction
@@ -182,7 +240,7 @@ func (campain *Campain) report(report *entity.Report, message interface{}) {
 
 func (campain *Campain) processBlockNumber() {
 	for {
-		blockNumber := <-campain.ChnBlockNumber
+		blockNumber := <-campain.chnBlockNumber
 		if blockNumber <= campain.lastBlockNumber {
 			continue
 		}
@@ -207,7 +265,7 @@ func (campain *Campain) processBlockNumber() {
 
 func (campain *Campain) processTransaction() {
 	for {
-		trans := <-campain.ChnTransactions
+		trans := <-campain.chnTransactions
 
 		//fmt.Println("transaction ", len(campain.filters), trans.BlockNumber)
 		for filter, track := range campain.filters {
@@ -264,7 +322,7 @@ func (campain *Campain) processTransaction() {
 
 func (campain *Campain) processEvent() {
 	for {
-		reportEvent := <-campain.ChnEvent
+		reportEvent := <-campain.chnEvent
 
 		for _, report := range reportEvent.track.Reports {
 
@@ -273,14 +331,6 @@ func (campain *Campain) processEvent() {
 			}
 		}
 	}
-}
-
-func (campain *Campain) run() {
-
-	cmd := CreateCmdLatestBlockNumber()
-	cmd.Init()
-	task := NewClientTask(campain.chainName, cmd)
-	goworker.AddTask(task)
 }
 
 func (campain *Campain) Run() {
@@ -294,15 +344,37 @@ func (campain *Campain) Run() {
 	if cacheLastBlock > campain.lastBlockNumber {
 		campain.lastBlockNumber = cacheLastBlock
 	}
-	if campain.IsAutoMine {
+	if campain.isAutoMine {
+
 		fmt.Println("auto mine")
 		utility.Schedule(campain.MineBlock, time.Second)
+
 	} else {
+
 		fmt.Println("not auto mine")
 	}
+	for _, toolLabel := range campain.workerLabels {
+
+		for origin, _ := range campain.originEndpoint {
+
+			if origin != "default" {
+
+				goworker.AddOrigin(toolLabel, origin, nil, 100)
+			}
+		}
+		goworker.SetQuantityReporter(toolLabel, campain.EndpointQuantityReport)
+	}
+
 	go campain.processBlockNumber()
 	go campain.processTransaction()
 	go campain.processEvent()
 
 	campain.isRun = true
+}
+
+func (campain *Campain) GetDirectContractTool(contractName string) *ContractTool {
+	if tool, ok := campain.directContractTool[contractName]; ok {
+		return tool
+	}
+	return nil
 }

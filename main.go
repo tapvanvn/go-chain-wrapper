@@ -26,7 +26,7 @@ import (
 	"github.com/tapvanvn/go-jsonrpc-wrapper/utility"
 	"github.com/tapvanvn/gopubsubengine"
 	"github.com/tapvanvn/gorouter/v2"
-	"github.com/tapvanvn/goworker"
+	goworker "github.com/tapvanvn/goworker/v2"
 )
 
 type Handles []gorouter.RouteHandle
@@ -62,7 +62,7 @@ func OnContractCall(message string) {
 	}
 
 	call := campain.CreateContractCall(frm.Name, inputs, frm.ReportName, frm.Topic)
-	//fmt.Println("call:", call)
+
 	//TODO: check if chain name is valid
 	task := campain.NewContractTask(frm.ChainName, call)
 	go goworker.AddTask(task)
@@ -134,7 +134,7 @@ func initWorker() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("export", ex)
+
 		goworker.AddToolWithControl(ex.Name,
 			&campain.ExportBlackSmith{
 				ExportName: ex.Name,
@@ -160,48 +160,14 @@ func initWorker() {
 	}
 
 	for _, chain := range system.Config.Chains {
-		fmt.Println("add tool for chain ", chain.Name)
 
 		camp := campain.AddCampain(&chain)
+
 		if len(chain.Endpoints) == 0 {
+
 			panic(errors.New("chain must has atleast 1 endpoint"))
 		}
-		camp.Endpoints = append(camp.Endpoints, chain.Endpoints...)
 
-		for _, contract := range chain.Contracts {
-			err := camp.LoadContract(&contract)
-			if err != nil {
-				fmt.Println(err.Error())
-				panic(err)
-			}
-
-			if chain.Name == "bsc" || chain.Name == "kai" {
-				fmt.Println("tool1", chain.Name+"."+contract.Name+".trans")
-				goworker.AddToolWithControl(chain.Name+"."+contract.Name+".trans", &campain.TransactionBlackSmith{
-					Campain:      camp,
-					ContractName: contract.Name,
-					BackendURLS:  chain.Endpoints,
-				}, chain.NumWorker)
-
-				goworker.AddToolWithControl(chain.Name+"."+contract.Name, &campain.EthContractBlackSmith{
-					Campain:      camp,
-					ContractName: contract.Name,
-					BackendURLS:  chain.Endpoints,
-				}, chain.NumWorker)
-			}
-		}
-		for _, track := range chain.Tracking {
-
-			camp.Tracking(track)
-		}
-
-		if chain.Name == "bsc" || chain.Name == "kai" {
-
-			goworker.AddToolWithControl(chain.Name, &campain.ClientBlackSmith{
-				Campain:     camp,
-				BackendURLS: chain.Endpoints,
-			}, chain.NumWorker)
-		}
 		camp.Run()
 	}
 }
@@ -212,6 +178,7 @@ func reportLive() {
 	}
 	godashboard.Report(signal)
 }
+
 func main() {
 	engines.InitEngineFunc = StartEngine
 	_ = engines.GetEngine()
@@ -288,28 +255,6 @@ func main() {
 	http.Handle("/v1/", router)
 
 	fmt.Println("listen on port", port)
-
-	/*for i := 0; i < 2; i++ {
-		cmd := &command.CmdGetLatestBlockNumber{}
-		cmd.Init()
-		task := worker.NewTask("bsc", cmd)
-		goworker.AddTask(task)
-		//time.Sleep(10 * time.Second)
-	}
-
-	cmd := command.CreateCmdTransactionsOfBlock(-1)
-	cmd.Init()
-	task := worker.NewTask("bsc", cmd)
-	goworker.AddTask(task)
-	*/
-	/*
-		call := campain.ContractCall{
-			FuncName: "totalSupply",
-			Params:   nil,
-		}
-		task := campain.NewContractTask("bsc.pet", &call)
-		goworker.AddTask(task)
-	*/
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }

@@ -11,8 +11,9 @@ type ToolExport struct {
 
 func NewExportTool(ex export.Exporter) (*ToolExport, error) {
 
-	__tool_id += 1
-	tool := &ToolExport{id: __tool_id, ex: ex}
+	tool := &ToolExport{
+		id: newToolID(),
+		ex: ex}
 
 	return tool, nil
 }

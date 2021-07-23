@@ -18,8 +18,8 @@ type KaiClientTool struct {
 
 func NewKaiClientTool(campain *Campain, backendURL string) (*KaiClientTool, error) {
 
-	__tool_id += 1
-	tool := &KaiClientTool{id: __tool_id,
+	tool := &KaiClientTool{
+		id:      newToolID(),
 		ready:   false,
 		campain: campain,
 	}

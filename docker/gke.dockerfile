@@ -16,7 +16,6 @@ RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=build               /src/go-jsonrpc-wrapper / 
-#COPY --from=build               /3rd/bsc/build/bin/     /3rd/bsc/
 COPY config/config.jsonc        /config/config.jsonc 
 COPY config/route.jsonc        /config/route.jsonc 
 COPY abi_file/                  /abi_file

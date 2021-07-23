@@ -19,7 +19,7 @@ func (cmd *CmdGetLatestBlockNumber) GetID() int {
 	return cmd.id
 }
 
-func (cmd *CmdGetLatestBlockNumber) Do(tool ITool) {
+func (cmd *CmdGetLatestBlockNumber) Do(tool IClientTool) {
 	blockNumber, err := tool.GetLatestBlockNumber()
 	if err != nil {
 		//TODO: process error
@@ -45,5 +45,5 @@ func (cmd *CmdGetLatestBlockNumber) Debug() {
 }
 
 func (cmd *CmdGetLatestBlockNumber) Done(campain *Campain) {
-	campain.ChnBlockNumber <- cmd.BlockNumber
+	campain.chnBlockNumber <- cmd.BlockNumber
 }

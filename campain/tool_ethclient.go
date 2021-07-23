@@ -21,8 +21,8 @@ type EthClientTool struct {
 
 func NewEthClientTool(campain *Campain, backendURL string) (*EthClientTool, error) {
 
-	__tool_id += 1
-	tool := &EthClientTool{id: __tool_id,
+	tool := &EthClientTool{
+		id:      newToolID(),
 		ready:   false,
 		campain: campain,
 	}

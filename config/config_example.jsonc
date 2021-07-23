@@ -17,9 +17,9 @@
             "name":"bsc",
             "num_worker":1,
             "auto_run": false, //auto mine block
-            "endpoints":[
-                "https:/\/bsc-dataseed.binance.org"
-            ],
+            "endpoints":{
+                "default": "https:/\/bsc-dataseed.binance.org"
+            },
             "tracking":[
                 {
                     "address":"0xfb62ae373aca027177d1c18ee0862817f9080d08",

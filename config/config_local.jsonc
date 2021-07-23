@@ -7,14 +7,14 @@
         }
     ],
     "chains": [
-        /*{
+        {
             "name":"bsc",
             "num_worker":10,
             "auto_mine": true,
             "mine_from_block": 9308902,
-            "endpoints":[
-                "https:/\/bsc-dataseed.binance.org"
-            ],
+            "endpoints":{
+                "default": "https:/\/dark-icy-fog.bsc.quiknode.pro/fef6912638d88ff03f1c6083f84b2b3465ca400e/"
+            },
             "tracking":[
                 {
                     "address":"0xfb62ae373aca027177d1c18ee0862817f9080d08",
@@ -54,15 +54,15 @@
                     "abi":"pet_sol_GeneScience.abi"
                 }
             ]
-        }*/
+        }/*
         {
             "name":"kai",
             "auto_mine": true,
             "num_worker":2,
-            "mine_from_block": 3303389,
-            "endpoints":[
-                "https:/\/rpc.kardiachain.io"
-            ],
+            "mine_from_block": 3403389,
+            "endpoints":{
+                "default":"https:/\/rpc.kardiachain.io"
+            },
             "tracking":[
                 {
                     "address":"0xc80ace0ac969397f96a8e1c97d21b4759fafeb1e",
@@ -87,6 +87,6 @@
                     "abi":"pet_sol_GeneScience.abi"
                 }
             ]
-        }
+        }*/
     ]
 }

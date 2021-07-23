@@ -15,8 +15,8 @@ type ContractTool struct {
 
 func NewContractTool(campain *Campain, contractName string, backendURL string) (*ContractTool, error) {
 
-	__tool_id += 1
-	tool := &ContractTool{id: __tool_id,
+	tool := &ContractTool{
+		id:      newToolID(),
 		campain: campain,
 	}
 

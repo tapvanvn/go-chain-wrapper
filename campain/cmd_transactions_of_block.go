@@ -32,7 +32,7 @@ func (cmd *CmdTransactionsOfBlock) GetID() int {
 	return cmd.id
 }
 
-func (cmd *CmdTransactionsOfBlock) Do(tool ITool) {
+func (cmd *CmdTransactionsOfBlock) Do(tool IClientTool) {
 	transactions, err := tool.GetBlockTransaction(cmd.BlockNumber)
 	if err != nil {
 		return
@@ -65,6 +65,6 @@ func (cmd *CmdTransactionsOfBlock) GetResponseInterface() interface{} {
 func (cmd *CmdTransactionsOfBlock) Done(campain *Campain) {
 	fmt.Println("done fine transaction for block", cmd.BlockNumber)
 	for _, trans := range cmd.Transactions {
-		campain.ChnTransactions <- *trans
+		campain.chnTransactions <- *trans
 	}
 }

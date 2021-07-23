@@ -4,34 +4,8 @@ import (
 	"fmt"
 
 	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+	goworker "github.com/tapvanvn/goworker/v2"
 )
-
-type Task struct {
-	tool    string
-	command Command
-}
-
-func NewTask(chain string, command Command) *Task {
-	return &Task{
-		tool:    chain,
-		command: command,
-	}
-}
-
-func (task *Task) Process(tool interface{}) {
-
-	if tool1, ok := tool.(*Tool); ok {
-
-		tool1.AddCommand(task.command)
-
-	} else {
-		fmt.Println("not tool1", task.ToolLabel())
-	}
-}
-
-func (task *Task) ToolLabel() string {
-	return task.tool
-}
 
 //MARK: ClientTask
 type ClientTask struct {
@@ -40,15 +14,17 @@ type ClientTask struct {
 }
 
 func NewClientTask(tool string, command Command) *ClientTask {
+
 	return &ClientTask{
+
 		tool:    tool,
 		command: command,
 	}
 }
 
-func (task *ClientTask) Process(tool interface{}) {
+func (task *ClientTask) Process(tool interface{}) goworker.ToolQuantity {
 
-	if tool1, ok := tool.(ITool); ok {
+	if tool1, ok := tool.(IClientTool); ok {
 
 		task.command.Do(tool1)
 
@@ -56,6 +32,8 @@ func (task *ClientTask) Process(tool interface{}) {
 
 		fmt.Println("not tool for client task", task.ToolLabel(), tool)
 	}
+
+	return goworker.ToolQuantityGood
 }
 
 func (task *ClientTask) ToolLabel() string {
@@ -76,7 +54,7 @@ func NewTransactionTask(tool string, command Command) *ClientTask {
 	}
 }
 
-func (task *TransactionTask) Process(tool interface{}) {
+func (task *TransactionTask) Process(tool interface{}) goworker.ToolQuantity {
 
 	if tool1, ok := tool.(ITransactionTool); ok {
 
@@ -86,6 +64,7 @@ func (task *TransactionTask) Process(tool interface{}) {
 
 		fmt.Println("not tool for client task", task.ToolLabel(), tool)
 	}
+	return goworker.ToolQuantityGood
 }
 
 func (task *TransactionTask) ToolLabel() string {
@@ -105,7 +84,7 @@ func NewContractTask(chain string, call *ContractCall) *ContractTask {
 	}
 }
 
-func (task *ContractTask) Process(tool interface{}) {
+func (task *ContractTask) Process(tool interface{}) goworker.ToolQuantity {
 
 	if tool1, ok := tool.(*ContractTool); ok {
 
@@ -114,6 +93,7 @@ func (task *ContractTask) Process(tool interface{}) {
 	} else {
 		fmt.Println("not tool2", task.ToolLabel())
 	}
+	return goworker.ToolQuantityGood
 }
 
 func (task *ContractTask) ToolLabel() string {
@@ -134,7 +114,7 @@ func NewPubsubTask(tool string, topic string, message interface{}) *PubsubTask {
 	}
 }
 
-func (task *PubsubTask) Process(tool interface{}) {
+func (task *PubsubTask) Process(tool interface{}) goworker.ToolQuantity {
 
 	if tool1, ok := tool.(*ToolExport); ok {
 
@@ -143,6 +123,7 @@ func (task *PubsubTask) Process(tool interface{}) {
 	} else {
 		fmt.Println("not tool3", task.ToolLabel())
 	}
+	return goworker.ToolQuantityGood
 }
 
 func (task *PubsubTask) ToolLabel() string {

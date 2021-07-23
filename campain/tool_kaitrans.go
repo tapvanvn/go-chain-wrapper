@@ -21,8 +21,7 @@ type KaiTransactionTool struct {
 
 func NewKaiTransactionTool(campain *Campain, backendURL string, abi *KaiABI) (*KaiTransactionTool, error) {
 
-	__tool_id += 1
-	tool := &KaiTransactionTool{id: __tool_id,
+	tool := &KaiTransactionTool{id: newToolID(),
 		ready:   false,
 		campain: campain,
 		abi:     abi,
@@ -87,6 +86,8 @@ func (tool *KaiTransactionTool) Parse(transaction *entity.Transaction, track *en
 					}
 				}
 			}
+		} else {
+			fmt.Println("get recept fail", err)
 		}
 	}
 	/*hash := common.HexToHash(transaction.Hash)
@@ -142,7 +143,7 @@ func (tool *KaiTransactionTool) Parse(transaction *entity.Transaction, track *en
 					track:  track,
 					events: events,
 				}
-				tool.campain.ChnEvent <- report
+				tool.campain.chnEvent <- report
 			}
 		}
 	}*/

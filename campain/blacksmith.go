@@ -6,43 +6,28 @@ import (
 	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
 )
 
-//MARK:JsonRpcBlackSmith
-type JsonRpcBlackSmith struct {
-	Campain     *Campain
-	BackendURLS []string
-}
-
-//Make make tool
-func (blacksmith *JsonRpcBlackSmith) Make() interface{} {
-
-	//TODO: random backend
-	tool, err := NewTool(blacksmith.Campain, blacksmith.BackendURLS[0])
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	return tool
-}
-
 //MARK:Client
 type ClientBlackSmith struct {
-	Campain     *Campain
-	BackendURLS []string
+	Campain *Campain
 }
 
 //Make make tool
-func (blacksmith *ClientBlackSmith) Make() interface{} {
+func (blacksmith *ClientBlackSmith) Make(origin string, meta interface{}) interface{} {
 
+	endpoint := string(blacksmith.Campain.GetEndpoint(origin))
+	if len(endpoint) == 0 {
+		return nil
+	}
 	//TODO: random backend
 	if blacksmith.Campain.chainName == "bsc" {
-		tool, err := NewEthClientTool(blacksmith.Campain, blacksmith.BackendURLS[0])
+		tool, err := NewEthClientTool(blacksmith.Campain, endpoint)
 		if err != nil {
 			fmt.Println(err)
 			return nil
 		}
 		return tool
 	} else if blacksmith.Campain.chainName == "kai" {
-		tool, err := NewKaiClientTool(blacksmith.Campain, blacksmith.BackendURLS[0])
+		tool, err := NewKaiClientTool(blacksmith.Campain, endpoint)
 		if err != nil {
 			fmt.Println(err)
 			return nil
@@ -55,17 +40,20 @@ func (blacksmith *ClientBlackSmith) Make() interface{} {
 //MARK: Transaction
 type TransactionBlackSmith struct {
 	Campain      *Campain
-	BackendURLS  []string
 	ContractName string
 }
 
 //Make make tool
-func (blacksmith *TransactionBlackSmith) Make() interface{} {
+func (blacksmith *TransactionBlackSmith) Make(origin string, meta interface{}) interface{} {
+	endpoint := string(blacksmith.Campain.GetEndpoint(origin))
+	if len(endpoint) == 0 {
+		return nil
+	}
 	if blacksmith.Campain.chainName == "bsc" {
 		if rawAbi, ok := blacksmith.Campain.abis[blacksmith.ContractName]; ok {
 			if abi := rawAbi.(*EthereumABI); abi != nil {
 
-				tool, err := NewEthTransactionTool(blacksmith.Campain, blacksmith.BackendURLS[0], abi, blacksmith.ContractName)
+				tool, err := NewEthTransactionTool(blacksmith.Campain, endpoint, abi, blacksmith.ContractName)
 				if err != nil {
 					fmt.Println(err)
 					return nil
@@ -77,7 +65,7 @@ func (blacksmith *TransactionBlackSmith) Make() interface{} {
 	} else if blacksmith.Campain.chainName == "kai" {
 		if rawAbi, ok := blacksmith.Campain.abis[blacksmith.ContractName]; ok {
 			if abi := rawAbi.(*KaiABI); abi != nil {
-				tool, err := NewKaiTransactionTool(blacksmith.Campain, blacksmith.BackendURLS[0], abi)
+				tool, err := NewKaiTransactionTool(blacksmith.Campain, endpoint, abi)
 				if err != nil {
 					fmt.Println(err)
 					return nil
@@ -90,18 +78,20 @@ func (blacksmith *TransactionBlackSmith) Make() interface{} {
 }
 
 //MARK: contract call
-
-type EthContractBlackSmith struct {
+type ContractBlackSmith struct {
 	Campain      *Campain
 	ContractName string
-	BackendURLS  []string
 }
 
 //Make make tool
-func (blacksmith *EthContractBlackSmith) Make() interface{} {
+func (blacksmith *ContractBlackSmith) Make(origin string, meta interface{}) interface{} {
+	endpoint := string(blacksmith.Campain.GetEndpoint(origin))
+	if len(endpoint) == 0 {
+		return nil
+	}
 	//TODO: random backend
 	fmt.Println("create contract tool")
-	tool, err := NewContractTool(blacksmith.Campain, blacksmith.ContractName, blacksmith.BackendURLS[0])
+	tool, err := NewContractTool(blacksmith.Campain, blacksmith.ContractName, endpoint)
 	if err != nil {
 		fmt.Println(err)
 		return nil
@@ -114,7 +104,7 @@ type ExportBlackSmith struct {
 }
 
 //Make make tool
-func (blacksmith *ExportBlackSmith) Make() interface{} {
+func (blacksmith *ExportBlackSmith) Make(origin string, meta interface{}) interface{} {
 
 	ex := export.GetExport(blacksmith.ExportName)
 	if ex != nil {

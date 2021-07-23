@@ -11,7 +11,7 @@ import (
 	"github.com/tapvanvn/go-jsonrpc-wrapper/route/request"
 	"github.com/tapvanvn/go-jsonrpc-wrapper/route/response"
 	"github.com/tapvanvn/gorouter/v2"
-	"github.com/tapvanvn/goworker"
+	goworker "github.com/tapvanvn/goworker/v2"
 )
 
 //Unhandle handle unhandling route
@@ -80,7 +80,7 @@ func callContract(context *gorouter.RouteContext) {
 			response.NotFound(context)
 			return
 		}
-		if tool, ok := camp.DirectContractTool[parts[1]]; ok {
+		if tool := camp.GetDirectContractTool(parts[1]); tool != nil {
 
 			err := tool.Process(call)
 			if err != nil {
@@ -90,7 +90,7 @@ func callContract(context *gorouter.RouteContext) {
 			response.Success(context, call)
 			return
 		} else {
-			fmt.Println("tool not found", parts, camp.DirectContractTool)
+			fmt.Println("tool not found", parts)
 		}
 
 	} else {
