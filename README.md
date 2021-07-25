@@ -1,5 +1,5 @@
-# go-jsonrpc-wrapper
-What happen on ethereum chain 
+# go-chain-wrapper
+What happen on chain 
 
 #Run local
 1. download geth from binance and locate it in ./bsc/geth
