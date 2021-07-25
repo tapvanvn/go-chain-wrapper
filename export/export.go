@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
 	"github.com/tapvanvn/gopubsubengine"
 )
 

@@ -13,7 +13,7 @@ type ContractTool struct {
 	backendURL string
 }
 
-func NewContractTool(campain *Campain, contractName string, backendURL string) (*ContractTool, error) {
+func NewContractTool(campain *Campain, contractName ContractName, backendURL Endpoint) (*ContractTool, error) {
 
 	tool := &ContractTool{
 		id:      newToolID(),

@@ -6,10 +6,10 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/campain"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/form"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/route/request"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/route/response"
+	"github.com/tapvanvn/go-chain-wrapper/campain"
+	"github.com/tapvanvn/go-chain-wrapper/form"
+	"github.com/tapvanvn/go-chain-wrapper/route/request"
+	"github.com/tapvanvn/go-chain-wrapper/route/response"
 	"github.com/tapvanvn/gorouter/v2"
 	goworker "github.com/tapvanvn/goworker/v2"
 )
@@ -80,7 +80,7 @@ func callContract(context *gorouter.RouteContext) {
 			response.NotFound(context)
 			return
 		}
-		if tool := camp.GetDirectContractTool(parts[1]); tool != nil {
+		if tool := camp.GetDirectContractTool(campain.ContractName(parts[1])); tool != nil {
 
 			err := tool.Process(call)
 			if err != nil {

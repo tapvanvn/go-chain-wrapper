@@ -19,14 +19,14 @@ func (cmd *CmdGetLatestBlockNumber) GetID() int {
 	return cmd.id
 }
 
-func (cmd *CmdGetLatestBlockNumber) Do(tool IClientTool) {
+func (cmd *CmdGetLatestBlockNumber) Do(tool IClientTool) error {
 	blockNumber, err := tool.GetLatestBlockNumber()
 	if err != nil {
-		//TODO: process error
-		return
+		return err
 	}
 	cmd.BlockNumber = blockNumber
 	cmd.Done(tool.GetCampain())
+	return nil
 }
 
 func (cmd *CmdGetLatestBlockNumber) GetCommand(chain string) string {

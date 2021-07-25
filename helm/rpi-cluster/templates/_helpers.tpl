@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "jsonrpc-wrapper.name" -}}
+{{- define "chain-wrapper.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "jsonrpc-wrapper.fullname" -}}
+{{- define "chain-wrapper.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -27,16 +27,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "jsonrpc-wrapper.chart" -}}
+{{- define "chain-wrapper.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
 Common labels
 */}}
-{{- define "jsonrpc-wrapper.labels" -}}
-helm.sh/chart: {{ include "jsonrpc-wrapper.chart" . }}
-{{ include "jsonrpc-wrapper.selectorLabels" . }}
+{{- define "chain-wrapper.labels" -}}
+helm.sh/chart: {{ include "chain-wrapper.chart" . }}
+{{ include "chain-wrapper.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -46,17 +46,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "jsonrpc-wrapper.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "jsonrpc-wrapper.name" . }}
+{{- define "chain-wrapper.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "chain-wrapper.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "jsonrpc-wrapper.serviceAccountName" -}}
+{{- define "chain-wrapper.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
-    {{ default (include "jsonrpc-wrapper.fullname" .) .Values.serviceAccount.name }}
+    {{ default (include "chain-wrapper.fullname" .) .Values.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}

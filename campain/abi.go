@@ -6,5 +6,5 @@ type IContract interface {
 type IABI interface {
 	Info()
 	GetMethod(input string) (string, []interface{}, error)
-	NewContract(address string, backendURL string) (IContract, error)
+	NewContract(address ContractAddress, backendURL Endpoint) (IContract, error)
 }

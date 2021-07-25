@@ -1,14 +1,15 @@
-# Default values for jsonrpc-wrapper.
+# Default values for chain-wrapper.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 2
 namespace: default
 image:
-  repository: tapvanvn/gke_jsonrpc_wrapper
+  repository: ghcr.io/tapvanvn/go-chain-wrapper/gke_chain_wrapper
   pullPolicy: IfNotPresent
   tag: "0.0.1"
-
+imagePullSecrets:
+  - name: github-auth
 nameOverride: ""
 fullnameOverride: ""
 
@@ -33,7 +34,7 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
-  name: jsonrpc-wrapper
+  name: chain-wrapper
   type: NodePort
   port: 8080
   targetPort: 8080

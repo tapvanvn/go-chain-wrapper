@@ -16,7 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/system"
+	"github.com/tapvanvn/go-chain-wrapper/system"
 )
 
 var (
@@ -97,12 +97,12 @@ func (ethAbi *EthereumABI) GetMethod(input string) (string, []interface{}, error
 	return method.Name, args, nil
 
 }
-func (ethAbi *EthereumABI) NewContract(address string, backendURL string) (IContract, error) {
-	backend, err := ethclient.Dial(backendURL) //"https://bsc-dataseed1.binance.org")
+func (ethAbi *EthereumABI) NewContract(address ContractAddress, backendURL Endpoint) (IContract, error) {
+	backend, err := ethclient.Dial(string(backendURL))
 	if err != nil {
 		return nil, err
 	}
-	contract, err := ethAbi.bindContract(common.HexToAddress(address), backend, backend, backend)
+	contract, err := ethAbi.bindContract(common.HexToAddress(string(address)), backend, backend, backend)
 	if err != nil {
 		return nil, err
 	}

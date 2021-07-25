@@ -11,7 +11,7 @@ type Command interface {
 	Init()
 	GetID() int
 	GetCommand(chain string) string
-	Do(tool IClientTool)
+	Do(tool IClientTool) error
 	GetResponseInterface() interface{}
 	Debug()
 	Done(campain *Campain)

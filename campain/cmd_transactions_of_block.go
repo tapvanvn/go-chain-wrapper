@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
 )
 
 type CmdTransactionsOfBlock struct {
@@ -32,13 +32,15 @@ func (cmd *CmdTransactionsOfBlock) GetID() int {
 	return cmd.id
 }
 
-func (cmd *CmdTransactionsOfBlock) Do(tool IClientTool) {
+func (cmd *CmdTransactionsOfBlock) Do(tool IClientTool) error {
 	transactions, err := tool.GetBlockTransaction(cmd.BlockNumber)
 	if err != nil {
-		return
+		fmt.Println("get block transaction fail", cmd.BlockNumber, err)
+		return err
 	}
 	cmd.Transactions = transactions
 	cmd.Done(tool.GetCampain())
+	return nil
 }
 
 func (cmd *CmdTransactionsOfBlock) GetCommand(chain string) string {
@@ -64,7 +66,7 @@ func (cmd *CmdTransactionsOfBlock) GetResponseInterface() interface{} {
 
 func (cmd *CmdTransactionsOfBlock) Done(campain *Campain) {
 	fmt.Println("done fine transaction for block", cmd.BlockNumber)
-	for _, trans := range cmd.Transactions {
-		campain.chnTransactions <- *trans
-	}
+	//for _, trans := range cmd.Transactions {
+	campain.chnTransactions <- cmd.Transactions
+	//}
 }

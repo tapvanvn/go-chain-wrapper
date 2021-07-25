@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/filter"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/repository"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/utility"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
+	"github.com/tapvanvn/go-chain-wrapper/export"
+	"github.com/tapvanvn/go-chain-wrapper/filter"
+	"github.com/tapvanvn/go-chain-wrapper/repository"
+	"github.com/tapvanvn/go-chain-wrapper/utility"
 	goworker "github.com/tapvanvn/goworker/v2"
 )
 
@@ -23,26 +23,62 @@ func GetCampain(chainName string) *Campain {
 	return nil
 }
 
+var windowSize = 10
+
 type Endpoint string
+type ContractAddress string
+type ContractName string
+
+type Window struct {
+	mux         sync.Mutex
+	blockStatus []bool
+}
+
+func (w *Window) finishBlock(index int) bool {
+	if index < 0 || index > windowSize {
+		panic("Block Index invalid")
+	}
+	w.mux.Lock()
+	defer w.mux.Unlock()
+	w.blockStatus[index] = true
+
+	for _, status := range w.blockStatus {
+		if !status {
+			return false
+		}
+	}
+	return true
+}
+
+func newWindowSync() *Window {
+	return &Window{
+		blockStatus: make([]bool, windowSize),
+	}
+}
+
 type Campain struct {
 	mux sync.Mutex
 
 	isRun              bool
 	isAutoMine         bool
 	chainName          string
-	chnTransactions    chan entity.Transaction
+	chnTransactions    chan []*entity.Transaction
 	chnBlockNumber     chan uint64
 	chnEvent           chan *ReportEvent
 	endpoints          []Endpoint
 	filters            map[filter.IFilter]*entity.Track
 	lastBlockNumber    uint64
 	miningBlockNumber  uint64
-	abis               map[string]IABI
-	contractAddress    map[string]string
-	directContractTool map[string]*ContractTool
+	abis               map[ContractName]IABI
+	contractAddress    map[ContractName]ContractAddress
+	directContractTool map[ContractName]*ContractTool
 	quantityControl    map[string]int
 	originEndpoint     map[string]Endpoint
-	workerLabels       []string
+	toolLabels         []string
+	//block sync controll
+	syncWindow map[uint64]*Window
+	lowWindow  uint64 //lowest waiting syncing window
+	highWindow uint64 //highest waiting syncing window
 }
 
 func AddCampain(chain *entity.Chain) *Campain {
@@ -55,32 +91,34 @@ func AddCampain(chain *entity.Chain) *Campain {
 		isRun:              false,
 		chainName:          chain.Name,
 		isAutoMine:         chain.AutoMine,
-		chnTransactions:    make(chan entity.Transaction),
+		chnTransactions:    make(chan []*entity.Transaction),
 		chnBlockNumber:     make(chan uint64),
 		chnEvent:           make(chan *ReportEvent),
 		filters:            make(map[filter.IFilter]*entity.Track),
 		endpoints:          make([]Endpoint, 0),
 		lastBlockNumber:    chain.MineFromBlock,
 		miningBlockNumber:  0,
-		abis:               map[string]IABI{},
-		contractAddress:    map[string]string{},
-		directContractTool: map[string]*ContractTool{},
+		abis:               map[ContractName]IABI{},
+		contractAddress:    map[ContractName]ContractAddress{},
+		directContractTool: map[ContractName]*ContractTool{},
 		quantityControl:    map[string]int{},
 		originEndpoint:     map[string]Endpoint{},
-		workerLabels:       make([]string, 0),
+		toolLabels:         make([]string, 0),
+
+		syncWindow: map[uint64]*Window{},
 	}
 	__campmap[chain.Name] = camp
 
-	goworker.AddToolWithControl(chain.Name, &ClientBlackSmith{
-		Campain: camp,
-	}, chain.NumWorker)
-
-	camp.workerLabels = append(camp.workerLabels, chain.Name)
+	camp.toolLabels = append(camp.toolLabels, chain.Name)
 
 	for origin, endpoint := range chain.Endpoints {
 
 		camp.AddEndpoint(origin, Endpoint(endpoint))
 	}
+
+	goworker.AddToolWithControl(chain.Name, &ClientBlackSmith{
+		Campain: camp,
+	}, chain.NumWorker)
 
 	for _, contract := range chain.Contracts {
 		err := camp.LoadContract(&contract)
@@ -101,7 +139,7 @@ func AddCampain(chain *entity.Chain) *Campain {
 }
 
 func (campain *Campain) AddEndpoint(origin string, endpoint Endpoint) {
-
+	fmt.Println("add endpoint", origin, endpoint)
 	if len(campain.originEndpoint) == 0 {
 		origin = "default"
 	}
@@ -114,10 +152,12 @@ func (campain *Campain) GetEndpoint(origin string) Endpoint {
 	if endpoint, ok := campain.originEndpoint[origin]; ok {
 		return endpoint
 	}
+	fmt.Println("enpoint not found", origin, campain.originEndpoint)
 	return ""
 }
 
 func (campain *Campain) EndpointQuantityReport(origin string, meta interface{}, failCount int) {
+	fmt.Println("fail count", origin, failCount)
 	campain.quantityControl[origin] = failCount
 
 }
@@ -133,7 +173,8 @@ func (campain *Campain) MineBlock() {
 
 //LoadContract load a contract
 func (campain *Campain) LoadContract(contract *entity.Contract) error {
-
+	name := ContractName(contract.Name)
+	address := ContractAddress(contract.Address)
 	if contract.AbiName != "" {
 		if campain.chainName == "bsc" {
 			abiObj, err := NewEthereumABI(contract.AbiName, contract.Address)
@@ -142,25 +183,25 @@ func (campain *Campain) LoadContract(contract *entity.Contract) error {
 				return err
 			} else {
 				//abiObj.Info()
-				campain.abis[contract.Name] = abiObj
-				campain.contractAddress[contract.Name] = contract.Address
+				campain.abis[name] = abiObj
+				campain.contractAddress[name] = address
 
 			}
 		} else if campain.chainName == "kai" {
-			abiObj, err := NewKaiABI(contract.AbiName, contract.Address)
+			abiObj, err := NewKaiABI(contract.AbiName, address)
 			if err != nil {
 
 				return err
 			} else {
 				//abiObj.Info()
-				campain.abis[contract.Name] = abiObj
-				campain.contractAddress[contract.Name] = contract.Address
+				campain.abis[name] = abiObj
+				campain.contractAddress[name] = address
 			}
 		}
 
-		contractTool, err := NewContractTool(campain, contract.Name, string(campain.endpoints[0]))
+		contractTool, err := NewContractTool(campain, name, campain.endpoints[0])
 		if err == nil {
-			campain.directContractTool[contract.Name] = contractTool
+			campain.directContractTool[name] = contractTool
 		} else {
 			fmt.Println("", err)
 		}
@@ -173,19 +214,20 @@ func (campain *Campain) SetupContractWorker(contract *entity.Contract, numWorker
 
 	labelContract := fmt.Sprintf("%s.%s", campain.chainName, contract.Name)
 	labelTrans := fmt.Sprintf("%s.%s.trans", campain.chainName, contract.Name)
+	name := ContractName(contract.Name)
 
 	goworker.AddToolWithControl(labelContract, &ContractBlackSmith{
 		Campain:      campain,
-		ContractName: contract.Name,
+		ContractName: name,
 	}, numWorker)
 
 	goworker.AddToolWithControl(labelTrans, &TransactionBlackSmith{
 		Campain:      campain,
-		ContractName: contract.Name,
+		ContractName: name,
 	}, numWorker)
 
-	campain.workerLabels = append(campain.workerLabels, labelTrans)
-	campain.workerLabels = append(campain.workerLabels, labelContract)
+	campain.toolLabels = append(campain.toolLabels, labelTrans)
+	campain.toolLabels = append(campain.toolLabels, labelContract)
 }
 
 //Tracking tracking transaction
@@ -240,21 +282,44 @@ func (campain *Campain) report(report *entity.Report, message interface{}) {
 
 func (campain *Campain) processBlockNumber() {
 	for {
-		blockNumber := <-campain.chnBlockNumber
-		if blockNumber <= campain.lastBlockNumber {
+		latestBlockNumber := <-campain.chnBlockNumber
+
+		fmt.Println("process block", latestBlockNumber)
+		if latestBlockNumber < campain.lastBlockNumber {
+
 			continue
 		}
 
-		//we need to mine several block at a time
-		for i := campain.lastBlockNumber + 1; i <= campain.lastBlockNumber+100; i++ {
-			if i > blockNumber {
-				break
-			}
-			if i < campain.miningBlockNumber {
+		campain.lastBlockNumber = latestBlockNumber
 
-				continue
-			}
+		latestWindow := latestBlockNumber / uint64(windowSize)
+
+		if latestWindow <= campain.highWindow {
+			//window had been planned to sync
+			continue
+		}
+		if campain.lowWindow == 0 {
+
+			campain.lowWindow = latestWindow
+		}
+
+		if latestWindow-campain.lowWindow > 10 {
+
+			continue
+		}
+
+		beginBlock := latestWindow * uint64(windowSize)
+		toBlock := (latestWindow + 1) * uint64(windowSize)
+
+		campain.highWindow = latestWindow
+		campain.syncWindow[latestWindow] = newWindowSync()
+
+		fmt.Println("plan sync window", latestWindow, beginBlock, toBlock)
+		//plan to sync the window
+		for i := beginBlock; i < toBlock; i++ {
+
 			campain.miningBlockNumber = i
+
 			cmd := CreateCmdTransactionsOfBlock(i)
 			cmd.Init()
 			task := NewClientTask(campain.chainName, cmd)
@@ -266,56 +331,79 @@ func (campain *Campain) processBlockNumber() {
 func (campain *Campain) processTransaction() {
 	for {
 		trans := <-campain.chnTransactions
+		if len(trans) == 0 {
+			continue
+		}
+		blockNumber, err := strconv.ParseUint(trans[0].BlockNumber, 10, 64)
 
-		//fmt.Println("transaction ", len(campain.filters), trans.BlockNumber)
-		for filter, track := range campain.filters {
-			if filter.Match(&trans) {
-				event := map[string]interface{}{}
+		if err != nil {
+			panic(err)
+		}
 
-				fmt.Println(campain.chainName, "found transaction:", trans.Hash)
-				fmt.Println("\tfrom:", trans.From)
-				fmt.Println("\tto:", trans.To)
-				event["from"] = trans.From
-				event["to"] = trans.To
-				event["hash"] = trans.Hash
-				if track.ContractName != "" {
+		window := blockNumber / uint64(windowSize)
+		beginBlock := window * uint64(windowSize)
+		index := int(blockNumber - beginBlock)
 
-					if abiObj, ok := campain.abis[track.ContractName]; ok {
+		if syncWindow, ok := campain.syncWindow[window]; ok {
 
-						method, args, err := abiObj.GetMethod(trans.Input)
-						event["method"] = method
-						event["args"] = args
-						if err == nil {
-							fmt.Println("\tmethod:", method, args)
-						}
+			if syncWindow.finishBlock(index) {
 
+				delete(campain.syncWindow, window)
+				fmt.Println("finish window", window)
+				low := campain.highWindow
+				for windowIndex, _ := range campain.syncWindow {
+					if windowIndex < low {
+						low = windowIndex
 					}
 				}
-				fmt.Println("")
-				for _, report := range track.Reports {
-					if report.ReportTransaction {
-						campain.report(report, event)
-					}
-				}
-
-				if entity.AnyReportEvent(track.Reports) {
-					//TODO: add switch by config
-					task := TransactionTask{
-						tool:        campain.chainName + "." + track.ContractName + ".trans",
-						transaction: &trans,
-						track:       track,
-					}
-					go goworker.AddTask(&task)
-				}
+				campain.lowWindow = low
 			}
 		}
 
-		if transBlock, err := strconv.ParseUint(trans.BlockNumber, 10, 64); err == nil {
-			if transBlock > campain.lastBlockNumber {
-				campain.lastBlockNumber = transBlock
+		for _, tran := range trans {
+
+			//fmt.Println("transaction ", len(campain.filters), trans.BlockNumber)
+			for filter, track := range campain.filters {
+				if filter.Match(tran) {
+					event := map[string]interface{}{}
+
+					fmt.Println(campain.chainName, "found transaction:", tran.Hash)
+					fmt.Println("\tfrom:", tran.From)
+					fmt.Println("\tto:", tran.To)
+					event["from"] = tran.From
+					event["to"] = tran.To
+					event["hash"] = tran.Hash
+					if track.ContractName != "" {
+
+						if abiObj, ok := campain.abis[ContractName(track.ContractName)]; ok {
+
+							method, args, err := abiObj.GetMethod(tran.Input)
+							event["method"] = method
+							event["args"] = args
+							if err == nil {
+								fmt.Println("\tmethod:", method, args)
+							}
+
+						}
+					}
+					fmt.Println("")
+					for _, report := range track.Reports {
+						if report.ReportTransaction {
+							campain.report(report, event)
+						}
+					}
+
+					if entity.AnyReportEvent(track.Reports) {
+						//TODO: add switch by config
+						task := TransactionTask{
+							tool:        campain.chainName + "." + track.ContractName + ".trans",
+							transaction: tran,
+							track:       track,
+						}
+						go goworker.AddTask(&task)
+					}
+				}
 			}
-		} else {
-			fmt.Println(err)
 		}
 	}
 }
@@ -353,7 +441,7 @@ func (campain *Campain) Run() {
 
 		fmt.Println("not auto mine")
 	}
-	for _, toolLabel := range campain.workerLabels {
+	for _, toolLabel := range campain.toolLabels {
 
 		for origin, _ := range campain.originEndpoint {
 
@@ -372,7 +460,7 @@ func (campain *Campain) Run() {
 	campain.isRun = true
 }
 
-func (campain *Campain) GetDirectContractTool(contractName string) *ContractTool {
+func (campain *Campain) GetDirectContractTool(contractName ContractName) *ContractTool {
 	if tool, ok := campain.directContractTool[contractName]; ok {
 		return tool
 	}

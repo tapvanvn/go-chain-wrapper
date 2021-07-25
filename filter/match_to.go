@@ -3,7 +3,7 @@ package filter
 import (
 	"strings"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
 )
 
 type FilMatchTo struct {

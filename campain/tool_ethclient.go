@@ -9,7 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
 )
 
 type EthClientTool struct {
@@ -26,12 +26,13 @@ func NewEthClientTool(campain *Campain, backendURL string) (*EthClientTool, erro
 		ready:   false,
 		campain: campain,
 	}
-	backend, err := ethclient.Dial(backendURL) //"https://bsc-dataseed1.binance.org")
+	backend, err := ethclient.Dial(backendURL)
 	if err != nil {
+		fmt.Println("new ethclient err", campain.chainName, err)
 		return nil, err
 	}
 	tool.backend = backend
-
+	fmt.Println("new ethclient tool", campain.chainName, backendURL)
 	return tool, nil
 }
 
@@ -48,6 +49,7 @@ func (tool *EthClientTool) GetBlockTransaction(blockNumber uint64) ([]*entity.Tr
 	ctx := context.TODO()
 	block, err := tool.backend.BlockByNumber(ctx, blockBigNum)
 	if err != nil {
+
 		return nil, err
 	}
 	hash := block.Hash()

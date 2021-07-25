@@ -6,10 +6,10 @@ pushd "$DIR/../../"
 
 tag=$(<./version.txt)
 
-server_url=tapvanvn
+server_url=ghcr.io/tapvanvn/go-chain-wrapper
 
-docker build -t $server_url/rpi_jsonrpc_wrapper:$tag -f docker/rpi.dockerfile ./
+docker build -t $server_url/rpi_chain_wrapper:$tag -f docker/rpi.dockerfile ./
 
-docker push $server_url/rpi_jsonrpc_wrapper:$tag
+docker push $server_url/rpi_chain_wrapper:$tag
 
 popd

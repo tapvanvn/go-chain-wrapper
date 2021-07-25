@@ -15,7 +15,7 @@
 # vendor/
 
 go.sum 
-go-jsonrpc-wrapper
+go-chain-wrapper
 config/env.sh
 namespace.txt
 **/token.txt

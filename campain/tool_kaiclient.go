@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
 	"github.com/tapvanvn/go-kaiclient/kardia"
 	"go.uber.org/zap"
 )

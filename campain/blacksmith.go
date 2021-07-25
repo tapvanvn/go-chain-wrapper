@@ -3,7 +3,7 @@ package campain
 import (
 	"fmt"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
+	"github.com/tapvanvn/go-chain-wrapper/export"
 )
 
 //MARK:Client
@@ -16,13 +16,14 @@ func (blacksmith *ClientBlackSmith) Make(origin string, meta interface{}) interf
 
 	endpoint := string(blacksmith.Campain.GetEndpoint(origin))
 	if len(endpoint) == 0 {
+
 		return nil
 	}
 	//TODO: random backend
 	if blacksmith.Campain.chainName == "bsc" {
 		tool, err := NewEthClientTool(blacksmith.Campain, endpoint)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("bm create tool fail", err)
 			return nil
 		}
 		return tool
@@ -40,12 +41,12 @@ func (blacksmith *ClientBlackSmith) Make(origin string, meta interface{}) interf
 //MARK: Transaction
 type TransactionBlackSmith struct {
 	Campain      *Campain
-	ContractName string
+	ContractName ContractName
 }
 
 //Make make tool
 func (blacksmith *TransactionBlackSmith) Make(origin string, meta interface{}) interface{} {
-	endpoint := string(blacksmith.Campain.GetEndpoint(origin))
+	endpoint := blacksmith.Campain.GetEndpoint(origin)
 	if len(endpoint) == 0 {
 		return nil
 	}
@@ -80,13 +81,14 @@ func (blacksmith *TransactionBlackSmith) Make(origin string, meta interface{}) i
 //MARK: contract call
 type ContractBlackSmith struct {
 	Campain      *Campain
-	ContractName string
+	ContractName ContractName
 }
 
 //Make make tool
 func (blacksmith *ContractBlackSmith) Make(origin string, meta interface{}) interface{} {
-	endpoint := string(blacksmith.Campain.GetEndpoint(origin))
+	endpoint := blacksmith.Campain.GetEndpoint(origin)
 	if len(endpoint) == 0 {
+
 		return nil
 	}
 	//TODO: random backend

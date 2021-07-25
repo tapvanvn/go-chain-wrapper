@@ -5,7 +5,7 @@ metadata:
   name: {{ .Values.service.name }}
   namespace: {{ .Values.namespace }}
   labels:
-    {{- include "jsonrpc-wrapper.labels" . | nindent 4 }}
+    {{- include "chain-wrapper.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -13,4 +13,4 @@ spec:
       targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
   selector:
-    {{- include "jsonrpc-wrapper.selectorLabels" . | nindent 4 }}
+    {{- include "chain-wrapper.selectorLabels" . | nindent 4 }}

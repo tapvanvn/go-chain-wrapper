@@ -1,7 +1,7 @@
 package campain
 
 import (
-	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
+	"github.com/tapvanvn/go-chain-wrapper/export"
 )
 
 type ToolExport struct {

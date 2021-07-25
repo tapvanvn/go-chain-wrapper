@@ -3,7 +3,7 @@ package campain
 import (
 	"fmt"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
 	goworker "github.com/tapvanvn/goworker/v2"
 )
 
@@ -24,13 +24,11 @@ func NewClientTask(tool string, command Command) *ClientTask {
 
 func (task *ClientTask) Process(tool interface{}) goworker.ToolQuantity {
 
-	if tool1, ok := tool.(IClientTool); ok {
+	tool1 := tool.(IClientTool)
 
-		task.command.Do(tool1)
+	if err := task.command.Do(tool1); err != nil {
 
-	} else {
-
-		fmt.Println("not tool for client task", task.ToolLabel(), tool)
+		return goworker.ToolQuantityBad
 	}
 
 	return goworker.ToolQuantityGood
@@ -62,7 +60,7 @@ func (task *TransactionTask) Process(tool interface{}) goworker.ToolQuantity {
 
 	} else {
 
-		fmt.Println("not tool for client task", task.ToolLabel(), tool)
+		fmt.Println("not tool for transaction task", task.ToolLabel(), tool)
 	}
 	return goworker.ToolQuantityGood
 }

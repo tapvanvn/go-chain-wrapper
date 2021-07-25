@@ -3,8 +3,8 @@ package campain
 import (
 	"fmt"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/repository"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
+	"github.com/tapvanvn/go-chain-wrapper/repository"
 	"github.com/tapvanvn/godashboard"
 )
 

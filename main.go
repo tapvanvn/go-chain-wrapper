@@ -12,18 +12,18 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/campain"
+	"github.com/tapvanvn/go-chain-wrapper/campain"
 	"github.com/tapvanvn/godashboard"
 	engines "github.com/tapvanvn/godbengine"
 	"github.com/tapvanvn/godbengine/engine"
 	"github.com/tapvanvn/godbengine/engine/adapter"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/export"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/form"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/route"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/system"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/utility"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
+	"github.com/tapvanvn/go-chain-wrapper/export"
+	"github.com/tapvanvn/go-chain-wrapper/form"
+	"github.com/tapvanvn/go-chain-wrapper/route"
+	"github.com/tapvanvn/go-chain-wrapper/system"
+	"github.com/tapvanvn/go-chain-wrapper/utility"
 	"github.com/tapvanvn/gopubsubengine"
 	"github.com/tapvanvn/gorouter/v2"
 	goworker "github.com/tapvanvn/goworker/v2"
@@ -121,7 +121,7 @@ func StartEngine(engine *engine.Engine) {
 		fmt.Println("cannot init redis")
 	}
 
-	engine.Init(&redisPool, nil, nil)
+	engine.Init(nil, nil, nil)
 }
 func initWorker() {
 	//GetNumWorker

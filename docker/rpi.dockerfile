@@ -1,5 +1,5 @@
 
-FROM tapvanvn/rpi_jsonrpc_wrapper_base:latest AS build
+FROM ghcr.io/tapvanvn/go-chain-wrapper/rpi_chain_wrapper_base:latest AS build
 
 WORKDIR /
 
@@ -19,9 +19,9 @@ RUN apk update \
 
 RUN mkdir -p /3rd/bsc
 
-COPY --from=build               /src/go-jsonrpc-wrapper / 
+COPY --from=build               /src/go-chain-wrapper / 
 COPY config/config.jsonc        /config/config.jsonc 
 COPY config/route.jsonc        /config/route.jsonc 
 COPY abi_file/                  /abi_file
 
-ENTRYPOINT ["/go-jsonrpc-wrapper"]
+ENTRYPOINT ["/go-chain-wrapper"]

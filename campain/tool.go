@@ -1,6 +1,6 @@
 package campain
 
-import "github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+import "github.com/tapvanvn/go-chain-wrapper/entity"
 
 var __tool_id = 0
 

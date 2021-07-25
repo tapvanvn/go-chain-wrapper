@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "jsonrpc-wrapper.fullname" . }}
+  name: {{ include "chain-wrapper.fullname" . }}
   namespace: {{ .Values.namespace }}
   labels:
-    {{- include "jsonrpc-wrapper.labels" . | nindent 4 }}
+    {{- include "chain-wrapper.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "jsonrpc-wrapper.selectorLabels" . | nindent 6 }}
+      {{- include "chain-wrapper.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "jsonrpc-wrapper.selectorLabels" . | nindent 8 }}
+        {{- include "chain-wrapper.selectorLabels" . | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      serviceAccountName: {{ include "jsonrpc-wrapper.serviceAccountName" . }}
+      serviceAccountName: {{ include "chain-wrapper.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

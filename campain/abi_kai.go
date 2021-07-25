@@ -15,7 +15,7 @@ import (
 	"github.com/kardiachain/go-kardia/types"
 	"go.uber.org/zap"
 
-	"github.com/tapvanvn/go-jsonrpc-wrapper/system"
+	"github.com/tapvanvn/go-chain-wrapper/system"
 	"github.com/tapvanvn/go-kaiclient/kardia"
 )
 
@@ -28,10 +28,10 @@ var (
 
 type KaiABI struct {
 	Abi             abi.ABI
-	ContractAddress string
+	ContractAddress ContractAddress
 }
 
-func NewKaiABI(abiFileName string, address string) (IABI, error) {
+func NewKaiABI(abiFileName string, address ContractAddress) (IABI, error) {
 	// load contract ABI
 	kaiABI := &KaiABI{
 		ContractAddress: address,
@@ -96,13 +96,13 @@ func (kaiAbi *KaiABI) GetMethod(input string) (string, []interface{}, error) {
 }
 
 // bindStore binds a generic wrapper to an already deployed contract.
-func (kaiABI *KaiABI) NewContract(address string, backendURL string) (IContract, error) {
-	byteAddress := common.HexToAddress(address)
+func (kaiABI *KaiABI) NewContract(address ContractAddress, backendURL Endpoint) (IContract, error) {
+	byteAddress := common.HexToAddress(string(address))
 	lgr, err := zap.NewProduction()
 	if err != nil {
 		return nil, err
 	}
-	node, err := kardia.NewNode(backendURL, lgr)
+	node, err := kardia.NewNode(string(backendURL), lgr)
 
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (kaiABI *KaiABI) NewContract(address string, backendURL string) (IContract,
 
 type KaiContract struct {
 	node     kardia.Node
-	address  string
+	address  ContractAddress
 	Abi      *abi.ABI
 	contract *kardia.BoundContract
 }
@@ -130,7 +130,7 @@ func (contract *KaiContract) Call(result *[]interface{}, method string, params .
 		fmt.Println("call error", err)
 		return err
 	}
-	res, err := contract.node.KardiaCall(context.TODO(), kardia.ConstructCallArgs(contract.address, payload))
+	res, err := contract.node.KardiaCall(context.TODO(), kardia.ConstructCallArgs(string(contract.address), payload))
 
 	resResult, err := contract.contract.Abi.Unpack(method, res)
 	if result == nil {

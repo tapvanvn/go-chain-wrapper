@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/tapvanvn/go-jsonrpc-wrapper/entity"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
 )
 
 type EthTransactionTool struct {
@@ -21,7 +21,7 @@ type EthTransactionTool struct {
 	abi      *EthereumABI
 }
 
-func NewEthTransactionTool(campain *Campain, backendURL string, abi *EthereumABI, contractName string) (*EthTransactionTool, error) {
+func NewEthTransactionTool(campain *Campain, backendURL Endpoint, abi *EthereumABI, contractName ContractName) (*EthTransactionTool, error) {
 
 	tool := &EthTransactionTool{
 		id:      newToolID(),
@@ -29,7 +29,7 @@ func NewEthTransactionTool(campain *Campain, backendURL string, abi *EthereumABI
 		campain: campain,
 		abi:     abi,
 	}
-	backend, err := ethclient.Dial(backendURL)
+	backend, err := ethclient.Dial(string(backendURL))
 	if err != nil {
 		return nil, err
 	}
