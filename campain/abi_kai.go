@@ -15,6 +15,7 @@ import (
 	"github.com/kardiachain/go-kardia/types"
 	"go.uber.org/zap"
 
+	"github.com/tapvanvn/go-chain-wrapper/entity"
 	"github.com/tapvanvn/go-chain-wrapper/system"
 	"github.com/tapvanvn/go-kaiclient/kardia"
 )
@@ -144,4 +145,46 @@ func (contract *KaiContract) Call(result *[]interface{}, method string, params .
 	*result = resResult
 
 	return nil
+}
+
+func (contract *KaiContract) ParseLog(topic string, data []byte) (*entity.Event, error) {
+	event, err := contract.Abi.EventByID(common.BytesToHash([]byte(topic)))
+	if err != nil {
+		return nil, err
+	}
+	outs, err := event.Inputs.Unpack(data)
+	if err != nil {
+		return nil, err
+	}
+
+	count := 0
+	if len(outs) > 0 {
+		evt := &entity.Event{
+			Name:      event.Name,
+			Arguments: make(map[string]string),
+		}
+		for _, args := range event.Inputs {
+			argType := args.Type.String()
+			value := ""
+			if argType == "uint256" {
+
+				tryBig := outs[count].(*big.Int)
+				value = tryBig.String()
+
+			} else if argType == "address" {
+				//value = outs[count].(common.Address).String()
+			} else {
+				value = "unsupported"
+			}
+			if err != nil {
+				break
+			}
+			evt.Arguments[args.Name] = fmt.Sprintf("%s.%s", args.Type.String(), value)
+			count++
+		}
+
+		return evt, nil
+	}
+
+	return nil, nil
 }

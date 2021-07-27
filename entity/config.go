@@ -12,7 +12,7 @@ type Chain struct {
 	MineFromBlock uint64            `json:"mine_from_block"`
 }
 type Config struct {
-	Dashboards []godashboard.Dashboard `json:"dashboards, omitempty"`
+	Dashboards []godashboard.Dashboard `json:"dashboards,omitempty"`
 	Exports    []Export                `json:"exports,omitempty"`
 	Chains     []Chain                 `json:"chains,omitempty"`
 }

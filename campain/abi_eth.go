@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
+	"github.com/tapvanvn/go-chain-wrapper/entity"
 	"github.com/tapvanvn/go-chain-wrapper/system"
 )
 
@@ -106,16 +107,63 @@ func (ethAbi *EthereumABI) NewContract(address ContractAddress, backendURL Endpo
 	if err != nil {
 		return nil, err
 	}
-	return &EthContract{contract: contract}, nil
+	return &EthContract{contract: contract, abi: ethAbi}, nil
 }
 
 type EthContract struct {
+	abi      *EthereumABI
 	contract *bind.BoundContract
 }
 
 func (contract *EthContract) Call(result *[]interface{}, method string, params ...interface{}) error {
 
 	return contract.contract.Call(nil, result, method, params...)
+}
+
+func (contract *EthContract) ParseLog(topic string, data []byte) (*entity.Event, error) {
+
+	hash := common.HexToHash("0x" + topic)
+
+	event, err := contract.abi.Abi.EventByID(hash)
+
+	if err != nil {
+
+		return nil, err
+	}
+
+	outs, err := event.Inputs.Unpack(data)
+	if err != nil {
+		return nil, err
+	}
+	count := 0
+	if len(outs) > 0 {
+		evt := &entity.Event{
+			Name:      event.Name,
+			Arguments: make(map[string]string),
+		}
+		for _, args := range event.Inputs {
+			argType := args.Type.String()
+			value := ""
+			if argType == "uint256" {
+
+				tryBig := outs[count].(*big.Int)
+				value = tryBig.String()
+
+			} else if argType == "address" {
+				value = outs[count].(common.Address).String()
+			} else {
+				value = "unsupported"
+			}
+			if err != nil {
+				break
+			}
+			evt.Arguments[args.Name] = fmt.Sprintf("%s.%s", args.Type.String(), value)
+			count++
+		}
+		return evt, nil
+	}
+
+	return nil, nil
 }
 
 // bindStore binds a generic wrapper to an already deployed contract.

@@ -92,7 +92,7 @@ func AddCampain(chain *entity.Chain) *Campain {
 		chainName:          chain.Name,
 		isAutoMine:         chain.AutoMine,
 		chnTransactions:    make(chan []*entity.Transaction),
-		chnBlockNumber:     make(chan uint64),
+		chnBlockNumber:     make(chan uint64, 1),
 		chnEvent:           make(chan *ReportEvent),
 		filters:            make(map[filter.IFilter]*entity.Track),
 		endpoints:          make([]Endpoint, 0),
@@ -213,7 +213,7 @@ func (campain *Campain) LoadContract(contract *entity.Contract) error {
 func (campain *Campain) SetupContractWorker(contract *entity.Contract, numWorker int) {
 
 	labelContract := fmt.Sprintf("%s.%s", campain.chainName, contract.Name)
-	labelTrans := fmt.Sprintf("%s.%s.trans", campain.chainName, contract.Name)
+	//labelTrans := fmt.Sprintf("%s.%s.trans", campain.chainName, contract.Name)
 	name := ContractName(contract.Name)
 
 	goworker.AddToolWithControl(labelContract, &ContractBlackSmith{
@@ -221,12 +221,12 @@ func (campain *Campain) SetupContractWorker(contract *entity.Contract, numWorker
 		ContractName: name,
 	}, numWorker)
 
-	goworker.AddToolWithControl(labelTrans, &TransactionBlackSmith{
+	/*goworker.AddToolWithControl(labelTrans, &TransactionBlackSmith{
 		Campain:      campain,
 		ContractName: name,
-	}, numWorker)
+	}, numWorker)*/
 
-	campain.toolLabels = append(campain.toolLabels, labelTrans)
+	//campain.toolLabels = append(campain.toolLabels, labelTrans)
 	campain.toolLabels = append(campain.toolLabels, labelContract)
 }
 
@@ -284,7 +284,6 @@ func (campain *Campain) processBlockNumber() {
 	for {
 		latestBlockNumber := <-campain.chnBlockNumber
 
-		fmt.Println("process block", latestBlockNumber)
 		if latestBlockNumber < campain.lastBlockNumber {
 
 			continue
@@ -362,7 +361,6 @@ func (campain *Campain) processTransaction() {
 
 		for _, tran := range trans {
 
-			//fmt.Println("transaction ", len(campain.filters), trans.BlockNumber)
 			for filter, track := range campain.filters {
 				if filter.Match(tran) {
 					event := map[string]interface{}{}
@@ -383,39 +381,44 @@ func (campain *Campain) processTransaction() {
 							if err == nil {
 								fmt.Println("\tmethod:", method, args)
 							}
-
 						}
 					}
 					fmt.Println("")
-					for _, report := range track.Reports {
-						if report.ReportTransaction {
-							campain.report(report, event)
-						}
-					}
-
+					evts := []*entity.Event{}
 					if entity.AnyReportEvent(track.Reports) {
+						directContractTool := campain.GetDirectContractTool(ContractName(track.ContractName))
+						if directContractTool != nil {
+
+							for _, log := range tran.Logs {
+								for _, topic := range log.Topics {
+									if evt, err := directContractTool.contract.ParseLog(topic, log.Data); err == nil && evt != nil {
+										evts = append(evts, evt)
+									}
+								}
+							}
+						}
+
 						//TODO: add switch by config
-						task := TransactionTask{
+						/*task := TransactionTask{
 							tool:        campain.chainName + "." + track.ContractName + ".trans",
 							transaction: tran,
 							track:       track,
 						}
 						go goworker.AddTask(&task)
+						*/
 					}
+					for _, report := range track.Reports {
+						if report.ReportTransaction {
+							campain.report(report, event)
+						}
+						if report.ReportEvent {
+							for _, evt := range evts {
+								campain.report(report, evt)
+							}
+						}
+					}
+
 				}
-			}
-		}
-	}
-}
-
-func (campain *Campain) processEvent() {
-	for {
-		reportEvent := <-campain.chnEvent
-
-		for _, report := range reportEvent.track.Reports {
-
-			for _, event := range reportEvent.events {
-				campain.report(report, event)
 			}
 		}
 	}
@@ -433,7 +436,7 @@ func (campain *Campain) Run() {
 		campain.lastBlockNumber = cacheLastBlock
 	}
 	if campain.isAutoMine {
-
+		campain.chnBlockNumber <- campain.lastBlockNumber
 		fmt.Println("auto mine")
 		utility.Schedule(campain.MineBlock, time.Second)
 
@@ -455,7 +458,6 @@ func (campain *Campain) Run() {
 
 	go campain.processBlockNumber()
 	go campain.processTransaction()
-	go campain.processEvent()
 
 	campain.isRun = true
 }

@@ -69,6 +69,20 @@ func (tool *KaiClientTool) GetBlockTransaction(blockNumber uint64) ([]*entity.Tr
 			To:                trans.To,
 			TransactionIndex:  strconv.FormatUint(uint64(trans.TransactionIndex), 10),
 			OriginTransaction: trans,
+			Logs:              make([]*entity.Log, 0),
+		}
+		if recept, err := tool.backend.GetTransactionReceipt(context.TODO(), trans.Hash); err == nil {
+			entityTrans.Success = recept.Status == 1
+			for _, log := range recept.Logs {
+				entityLog := &entity.Log{
+					Topics: make([]string, 0),
+					Data:   []byte(log.Data),
+				}
+				for _, topic := range log.Topics {
+					entityLog.Topics = append(entityLog.Topics, topic)
+				}
+				entityTrans.Logs = append(entityTrans.Logs, entityLog)
+			}
 		}
 		result = append(result, entityTrans)
 	}

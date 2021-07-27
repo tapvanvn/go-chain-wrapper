@@ -18,22 +18,13 @@
             "num_worker":2,
             "auto_mine": false,
             "endpoints":{
-                "default":"https:/\/bsc-dataseed.binance.org"
+                "default":"http:/\/115.79.196.91:8545"
             },
             "tracking":[
                 {
-                    "address":"0xfb62ae373aca027177d1c18ee0862817f9080d08",
-                    "subjects":["transaction.to"],
-                    "contract":"dpet",
-                    "reports":[ {
-                        "name":"rpi-cluster",
-                        "topic":"bsc.dpet_event"
-                    }]
-                }, 
-                {
                     "address":"0xea2e87ff1bc1e52b640452694e2f143f7f8d64be",
                     "subjects":["transaction.to"],
-                    "contract":"dpet",
+                    "contract":"pet",
                     "reports":[ {
                         "name":"rpi-cluster",
                         "topic":"bsc.pet_event"
@@ -41,11 +32,6 @@
                 }
             ],
             "contracts":[
-                {
-                    "name":"dpet",
-                    "address":"0xfb62ae373aca027177d1c18ee0862817f9080d08",
-                    "abi":"pet_sol_PetCore.abi"
-                },
                 {
                     "name":"pet",
                     "address":"0xea2e87ff1bc1e52b640452694e2f143f7f8d64be",
@@ -57,8 +43,8 @@
                     "abi":"pet_sol_GeneScience.abi"
                 }
             ]
-        }, 
-        {
+        }
+        /*,{
             "name":"kai",
             "num_worker":2,
             "endpoints":{
@@ -101,6 +87,6 @@
                     "abi":"pet_sol_GeneScience.abi"
                 }
             ]
-        }
+        }*/
     ]
 }

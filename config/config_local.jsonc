@@ -11,9 +11,12 @@
             "name":"bsc",
             "num_worker":10,
             "auto_mine": true,
-            "mine_from_block": 9308902,
+            "mine_from_block": 4308902,
             "endpoints":{
+                //"default":"http:/\/115.79.196.91:8545",
+                //"quicknode": "https:/\/dark-icy-fog.bsc.quiknode.pro/fef6912638d88ff03f1c6083f84b2b3465ca400e/"
                 "default": "https:/\/dark-icy-fog.bsc.quiknode.pro/fef6912638d88ff03f1c6083f84b2b3465ca400e/"
+                
             },
             "tracking":[
                 {
